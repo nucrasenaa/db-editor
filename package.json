@@ -6,12 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "serve-static": "npx serve@latest out",
     "lint": "eslint",
     "electron-dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron ./electron/main.js\"",
     "electron-app": "electron ./electron/main.js",
-    "build-mac": "next build && electron-builder build --mac",
-    "build-win": "next build && electron-builder build --win",
-    "build-all": "next build && electron-builder build --mac --win"
+    "build-mac": "EXPORT_MODE=true next build && electron-builder build --mac",
+    "build-win": "EXPORT_MODE=true next build && electron-builder build --win",
+    "build-all": "EXPORT_MODE=true next build && electron-builder build --mac --win"
   },
   "main": "electron/main.js",
   "dependencies": {
