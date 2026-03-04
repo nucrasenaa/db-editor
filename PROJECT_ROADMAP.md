@@ -15,16 +15,16 @@ This document tracks the development progress of **Data Forge**. It serves as a 
 - [x] **Data Export Engine**
     - [x] Export to CSV
     - [x] Export to JSON
-    - [ ] Export to Excel (XLSX)
+    - [x] Export to Excel (XLSX)
     - [x] Export as SQL `INSERT`,`CREATE` Scripts
-- [ ] **Visual Query Builder**
-    - [ ] Drag-and-drop table fields
-    - [ ] Visual Join manager
+- [x] **Visual Query Builder**
+    - [x] Drag-and-drop table fields
+    - [x] Visual Join manager
 - [x] **Schema DDL Generator**
     - [x] "View Create Script" for Tables
     - [x] "View Create Script" for Views/Procedures
-- [ ] **Import Wizard**
-    - [ ] Import from CSV/JSON to existing tables
+- [x] **Import Wizard**
+    - [x] Import from CSV/JSON to existing tables
 
 ## 2. ⌨️ SQL Editor Enhancement (Developer Productivity)
 *Goal: Provide a VS-Code-like experience for database administration.*

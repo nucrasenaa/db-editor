@@ -17,8 +17,10 @@ import {
     FileText,
     Database as DatabaseIcon,
     ChevronDown,
-    Share2
+    Share2,
+    Table as TableIcon
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { cn } from '@/lib/utils';
 import { apiRequest } from '@/lib/api';
 
@@ -161,6 +163,14 @@ export default function DataTable({
         setShowExport(false);
     };
 
+    const exportToExcel = () => {
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+        XLSX.writeFile(workbook, `export_${Date.now()}.xlsx`);
+        setShowExport(false);
+    };
+
     if (loading) {
         return (
             <div className="flex-1 flex items-center justify-center">
@@ -290,6 +300,9 @@ export default function DataTable({
                                 </button>
                                 <button onClick={() => exportToSQL('postgres')} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all text-left border-t border-border/50">
                                     <Share2 className="w-4 h-4 text-purple-400" /> INSERT Scripts (PG)
+                                </button>
+                                <button onClick={exportToExcel} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all text-left border-t border-border/50">
+                                    <TableIcon className="w-4 h-4 text-green-400" /> Export as Excel (XLSX)
                                 </button>
                             </div>
                         )}

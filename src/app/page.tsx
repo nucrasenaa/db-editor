@@ -9,6 +9,8 @@ import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search
 import { cn } from '@/lib/utils';
 import { apiRequest } from '@/lib/api';
 import TableDesigner from '@/components/TableDesigner';
+import ImportWizard from '@/components/ImportWizard';
+import VisualQueryBuilder from '@/components/VisualQueryBuilder';
 
 interface ConnectionHistory {
   id: string;
@@ -26,7 +28,7 @@ interface ConnectionHistory {
 
 interface Tab {
   id: string;
-  type: 'table' | 'query' | 'table-designer' | 'view-designer' | 'proc-designer';
+  type: 'table' | 'query' | 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder';
   title: string;
   database: string;
   sqlQuery: string;
@@ -286,8 +288,8 @@ export default function Home() {
     }
   };
 
-  const closeTab = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const closeTab = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     const newTabs = tabs.filter(t => t.id !== id);
     setTabs(newTabs);
     if (activeTabId === id && newTabs.length > 0) {
@@ -318,7 +320,7 @@ export default function Home() {
     setActiveTabId(id);
   };
 
-  const addDesignerTab = (type: 'table-designer' | 'view-designer' | 'proc-designer') => {
+  const addDesignerTab = (type: 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder') => {
     const id = `${type}-${Date.now()}`;
     const dialect = config.dbType || 'mssql';
     let title = 'New Table';
@@ -334,6 +336,10 @@ export default function Home() {
       query = dialect === 'mssql'
         ? 'CREATE PROCEDURE [dbo].[ProcedureName]\n  @Param1 INT\nAS\nBEGIN\n  SELECT * FROM ...\nEND'
         : 'CREATE PROCEDURE procedure_name()\nBEGIN\n  SELECT * FROM ...\nEND';
+    } else if (type === 'import-wizard') {
+      title = 'Import Data';
+    } else if (type === 'query-builder') {
+      title = 'Visual Builder';
     }
 
     const newTab: Tab = {
@@ -730,6 +736,38 @@ export default function Home() {
                     )}
                   </div>
                 </div>
+              ) : activeTab.type === 'import-wizard' ? (
+                <ImportWizard
+                  config={config}
+                  metadata={metadata || {}}
+                  onExecute={(sql) => executeQuery(sql, { tabId: activeTab.id, silent: false })}
+                  onClose={() => closeTab(activeTab.id)}
+                />
+              ) : activeTab.type === 'query-builder' ? (
+                <VisualQueryBuilder
+                  metadata={metadata || {}}
+                  onExecute={(sql) => {
+                    // Create a new query tab with this SQL
+                    const id = `q-${Date.now()}`;
+                    const newTab: Tab = {
+                      id,
+                      type: 'query',
+                      title: 'Generated Query',
+                      database: activeTab.database,
+                      sqlQuery: sql,
+                      queryResult: { data: [], columns: [], totalRows: 0 },
+                      loading: false,
+                      page: 1,
+                      pageSize: 100,
+                      sortDir: 'ASC',
+                      filter: '',
+                      showFilter: false
+                    };
+                    setTabs([...tabs, newTab]);
+                    setActiveTabId(id);
+                  }}
+                  onClose={() => closeTab(activeTab.id)}
+                />
               ) : null}
             </>
           ) : (

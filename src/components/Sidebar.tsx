@@ -16,7 +16,10 @@ import {
     Folder,
     FolderOpen,
     PlusCircle,
-    Code
+    Code,
+    Upload,
+    Share2,
+    LayoutDashboard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiRequest } from '@/lib/api';
@@ -26,7 +29,7 @@ interface SidebarProps {
     onObjectSelect: (objectName: string, type: 'table' | 'view' | 'procedure' | 'synonym', database?: string) => void;
     onMetadataLoad?: (dbName: string, metadata: MetadataType) => void;
     selectedObject: string | null;
-    onAddClick: (type: 'table-designer' | 'view-designer' | 'proc-designer') => void;
+    onAddClick: (type: 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder') => void;
     onViewScript: (fullName: string, type: 'table' | 'view' | 'procedure', database: string) => void;
 }
 
@@ -341,6 +344,29 @@ export default function Sidebar({ config, onObjectSelect, onMetadataLoad, select
                 ) : (
                     renderTree(databasesTree)
                 )}
+            </div>
+
+            {/* Data Utility Forge */}
+            <div className="mx-3 mb-4 space-y-3">
+                <div className="flex items-center gap-2 px-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">
+                    <Share2 className="w-2.5 h-2.5" /> Data Utility Forge
+                </div>
+                <div className="space-y-1">
+                    <button
+                        onClick={() => onAddClick('query-builder')}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold text-muted-foreground hover:text-purple-400 hover:bg-purple-500/5 transition-all border border-transparent hover:border-purple-500/10 group"
+                    >
+                        <LayoutDashboard className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                        Query Builder
+                    </button>
+                    <button
+                        onClick={() => onAddClick('import-wizard')}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/5 transition-all border border-transparent hover:border-emerald-500/10 group"
+                    >
+                        <Upload className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                        Import Wizard
+                    </button>
+                </div>
             </div>
 
             <div className="p-3 border-t border-border bg-muted/20">
