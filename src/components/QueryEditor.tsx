@@ -105,7 +105,7 @@ export default function QueryEditor({ onExecute, loading, metadata, query, onQue
     };
 
     return (
-        <div className="flex flex-col h-full bg-card/10 border border-border rounded-xl overflow-hidden">
+        <div className="flex-1 flex flex-col bg-card/10 border border-border rounded-xl overflow-hidden min-h-0">
             <div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-b border-border">
                 <div className="flex items-center gap-4">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">SQL Editor</span>

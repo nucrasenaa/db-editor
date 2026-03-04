@@ -251,6 +251,40 @@ export default function Home() {
     }
   };
 
+  const handleViewScript = async (fullName: string, type: 'table' | 'view' | 'procedure', database: string) => {
+    try {
+      const data = await apiRequest('/api/db/get-ddl', 'POST', {
+        config,
+        fullName,
+        type,
+        database
+      });
+
+      if (data.success) {
+        const newTab: Tab = {
+          id: Date.now().toString(),
+          type: 'query',
+          title: `DDL: ${fullName.split('.').pop()}`,
+          database: database,
+          sqlQuery: data.script,
+          queryResult: { data: [], columns: [], totalRows: 0 },
+          loading: false,
+          page: 1,
+          pageSize: 100,
+          sortDir: 'ASC',
+          filter: '',
+          showFilter: false
+        };
+        setTabs([...tabs, newTab]);
+        setActiveTabId(newTab.id);
+      } else {
+        alert('Error fetching DDL: ' + data.message);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const closeTab = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const newTabs = tabs.filter(t => t.id !== id);
@@ -517,6 +551,7 @@ export default function Home() {
         onMetadataLoad={handleMetadataLoad}
         selectedObject={activeTab?.title || null}
         onAddClick={addDesignerTab}
+        onViewScript={handleViewScript}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -572,11 +607,11 @@ export default function Home() {
         </header>
 
         {/* Workspace */}
-        <main className="flex-1 overflow-hidden relative flex flex-col">
+        <main className="flex-1 overflow-hidden relative flex flex-col min-h-0">
           {activeTab ? (
             <>
               {activeTab.type === 'query' ? (
-                <div className="flex-1 flex flex-col">
+                <div className="flex-1 flex flex-col min-h-0">
                   <QueryEditor
                     query={activeTab.sqlQuery}
                     onQueryChange={(q) => updateTab(activeTab.id, { sqlQuery: q })}
@@ -585,7 +620,7 @@ export default function Home() {
                     metadata={metadata}
                     dbType={config.dbType}
                   />
-                  <div className="flex-1 overflow-hidden">
+                  <div className="flex-1 overflow-hidden flex flex-col min-h-0">
                     <DataTable
                       data={activeTab.queryResult.data}
                       columns={activeTab.queryResult.columns}
@@ -604,7 +639,7 @@ export default function Home() {
                   </div>
                 </div>
               ) : activeTab.type === 'table' ? (
-                <div className="flex-1 flex flex-col">
+                <div className="flex-1 flex flex-col min-h-0">
                   <div className="h-12 border-b border-border bg-muted/10 flex items-center px-6 gap-4 shrink-0">
                     <div className="flex-1 flex gap-4 items-center">
                       <div className="flex items-center gap-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-muted/30 px-3 py-1.5 rounded-lg border border-border/50">
@@ -644,7 +679,7 @@ export default function Home() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex-1 overflow-hidden">
+                  <div className="flex-1 overflow-hidden flex flex-col min-h-0">
                     <DataTable
                       data={activeTab.queryResult.data}
                       columns={activeTab.queryResult.columns}

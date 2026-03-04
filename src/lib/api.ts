@@ -21,6 +21,9 @@ export async function apiRequest(endpoint: string, method: string, body: any) {
         if (endpoint.includes('/api/db/update')) {
             return await db.update(body);
         }
+        if (endpoint.includes('/api/db/get-ddl')) {
+            return await db.getDDL(body);
+        }
     }
 
     // Fallback to standard fetch for Web

@@ -220,6 +220,54 @@ function setupIpcHandlers() {
             return { success: false, message: error.message };
         }
     });
+
+    // 6. Get DDL (Create Script)
+    ipcMain.handle('db:get-ddl', async (event, { config, fullName, type, database }) => {
+        try {
+            const dialect = config.dbType || 'mssql';
+            const targetDb = database || config.database;
+            const dbProxy = await getDbProxy({ ...config, database: targetDb });
+            try {
+                let script = '';
+                if (dialect === 'mssql') {
+                    if (type === 'table') {
+                        // Simplified Table DDL generator for MSSQL
+                        const query = `
+                            SELECT 
+                                c.name, 
+                                ty.name as type, 
+                                c.max_length, 
+                                c.is_nullable,
+                                ISNULL(i.is_primary_key, 0) as is_pk
+                            FROM sys.columns c
+                            JOIN sys.types ty ON c.user_type_id = ty.user_type_id
+                            LEFT JOIN sys.index_columns ic ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+                            LEFT JOIN sys.indexes i ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+                            WHERE c.object_id = OBJECT_ID('[${targetDb}].${fullName}')
+                        `;
+                        const cols = await dbProxy.query(query);
+                        script = `CREATE TABLE ${fullName} (\n`;
+                        script += cols.map(c => `  [${c.name}] ${c.type.toUpperCase()}${c.max_length > 0 ? `(${c.max_length})` : ''} ${c.is_nullable ? 'NULL' : 'NOT NULL'}${c.is_pk ? ' PRIMARY KEY' : ''}`).join(',\n');
+                        script += `\n);`;
+                    } else {
+                        const query = `SELECT definition FROM [${targetDb}].sys.sql_modules WHERE object_id = OBJECT_ID('[${targetDb}].${fullName}')`;
+                        const result = await dbProxy.query(query);
+                        script = result[0]?.definition || `-- No definition found for ${fullName}`;
+                    }
+                } else {
+                    // Generic fallback for MySQL/Postgres
+                    const query = type === 'table' ? `SHOW CREATE TABLE ${fullName}` : `SHOW CREATE VIEW ${fullName}`;
+                    const result = await dbProxy.query(query);
+                    script = result[0]?.['Create Table'] || result[0]?.['Create View'] || JSON.stringify(result[0]);
+                }
+                return { success: true, script };
+            } finally {
+                await dbProxy.close();
+            }
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    });
 }
 
 module.exports = { setupIpcHandlers };

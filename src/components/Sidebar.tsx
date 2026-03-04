@@ -15,7 +15,8 @@ import {
     Table as TableIcon,
     Folder,
     FolderOpen,
-    PlusCircle
+    PlusCircle,
+    Code
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiRequest } from '@/lib/api';
@@ -26,6 +27,7 @@ interface SidebarProps {
     onMetadataLoad?: (dbName: string, metadata: MetadataType) => void;
     selectedObject: string | null;
     onAddClick: (type: 'table-designer' | 'view-designer' | 'proc-designer') => void;
+    onViewScript: (fullName: string, type: 'table' | 'view' | 'procedure', database: string) => void;
 }
 
 type MetadataType = {
@@ -37,7 +39,7 @@ type MetadataType = {
     synonyms: any[];
 };
 
-export default function Sidebar({ config, onObjectSelect, onMetadataLoad, selectedObject, onAddClick }: SidebarProps) {
+export default function Sidebar({ config, onObjectSelect, onMetadataLoad, selectedObject, onAddClick, onViewScript }: SidebarProps) {
     const [databases, setDatabases] = useState<any[]>([]);
     const [dbMetadata, setDbMetadata] = useState<Record<string, MetadataType>>({});
     const [loadingDb, setLoadingDb] = useState<Record<string, boolean>>({});
@@ -153,24 +155,40 @@ export default function Sidebar({ config, onObjectSelect, onMetadataLoad, select
                                 return (
                                     <div
                                         key={i}
-                                        onClick={() => onObjectSelect(item.fullName, node.itemType, node.database)}
                                         className={cn(
-                                            "flex items-center gap-2 py-1 px-3 mx-2 rounded cursor-pointer text-[12px] group transition-all",
+                                            "flex items-center gap-2 py-1 px-3 mx-2 rounded cursor-pointer text-[12px] group/item transition-all relative",
                                             isSelected
                                                 ? "bg-accent text-accent-foreground font-medium shadow-sm"
                                                 : "text-muted-foreground/80 hover:text-foreground hover:bg-muted/30"
                                         )}
                                         style={{ marginLeft: `${(level + 1) * 8}px` }}
                                     >
-                                        <div className={cn(
-                                            "w-1 h-1 rounded-full",
-                                            node.itemType === 'table' && "bg-blue-400/50",
-                                            node.itemType === 'view' && "bg-purple-400/50",
-                                            node.itemType === 'procedure' && "bg-orange-400/50",
-                                            node.itemType === 'synonym' && "bg-green-400/50",
-                                            isSelected && "bg-white"
-                                        )} />
-                                        <span className="truncate">{item.name}</span>
+                                        <div className="flex-1 flex items-center gap-2 overflow-hidden" onClick={() => onObjectSelect(item.fullName, node.itemType, node.database)}>
+                                            <div className={cn(
+                                                "w-1 h-1 rounded-full shrink-0",
+                                                node.itemType === 'table' && "bg-blue-400/50",
+                                                node.itemType === 'view' && "bg-purple-400/50",
+                                                node.itemType === 'procedure' && "bg-orange-400/50",
+                                                node.itemType === 'synonym' && "bg-green-400/50",
+                                                isSelected && "bg-white"
+                                            )} />
+                                            <span className="truncate">{item.name}</span>
+                                        </div>
+                                        {node.itemType !== 'synonym' && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onViewScript(item.fullName, node.itemType, node.database);
+                                                }}
+                                                className={cn(
+                                                    "p-1 rounded hover:bg-white/20 transition-all opacity-0 group-hover/item:opacity-100",
+                                                    isSelected && "opacity-100 text-white"
+                                                )}
+                                                title="View Create Script"
+                                            >
+                                                <Code className="w-3 h-3" />
+                                            </button>
+                                        )}
                                     </div>
                                 );
                             })}

@@ -11,9 +11,16 @@ import {
     ArrowUpDown,
     Check,
     X as CloseIcon,
-    Loader2
+    Loader2,
+    Download,
+    FileJson,
+    FileText,
+    Database as DatabaseIcon,
+    ChevronDown,
+    Share2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { apiRequest } from '@/lib/api';
 
 interface DataTableProps {
     data: any[];
@@ -49,7 +56,20 @@ export default function DataTable({
     const [editingCell, setEditingCell] = useState<{ rowIndex: number, col: string } | null>(null);
     const [editValue, setEditValue] = useState<string>('');
     const [isSaving, setIsSaving] = useState(false);
+    const [showExport, setShowExport] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const exportRef = useRef<HTMLDivElement>(null);
+
+    // Close export dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
+                setShowExport(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         if (editingCell && inputRef.current) {
@@ -90,6 +110,57 @@ export default function DataTable({
         if (e.key === 'Escape') handleCancelEdit();
     };
 
+    const downloadFile = (content: string, fileName: string, contentType: string) => {
+        const a = document.createElement('a');
+        const file = new Blob([content], { type: contentType });
+        a.href = URL.createObjectURL(file);
+        a.download = fileName;
+        a.click();
+    };
+
+    const exportToCSV = () => {
+        if (!data || data.length === 0) return;
+        const headers = columns.join(',');
+        const rows = data.map(row =>
+            columns.map(col => {
+                const val = row[col];
+                if (val === null) return 'NULL';
+                const str = String(val).replace(/"/g, '""');
+                return `"${str}"`;
+            }).join(',')
+        );
+        const csv = [headers, ...rows].join('\n');
+        downloadFile(csv, `export_${Date.now()}.csv`, 'text/csv');
+        setShowExport(false);
+    };
+
+    const exportToJSON = () => {
+        const json = JSON.stringify(data, null, 2);
+        downloadFile(json, `export_${Date.now()}.json`, 'application/json');
+        setShowExport(false);
+    };
+
+    const exportToSQL = (dialect: string = 'mssql') => {
+        if (!data || data.length === 0) return;
+        const tableName = 'ExportedData';
+        const qStart = dialect === 'mssql' ? '[' : (dialect === 'postgres' ? '"' : '`');
+        const qEnd = dialect === 'mssql' ? ']' : (dialect === 'postgres' ? '"' : '`');
+
+        const sql = data.map(row => {
+            const cols = columns.map(c => `${qStart}${c}${qEnd}`).join(', ');
+            const vals = columns.map(c => {
+                const val = row[c];
+                if (val === null) return 'NULL';
+                if (typeof val === 'string') return `'${val.replace(/'/g, dialect === 'mssql' ? "''" : "''")}'`;
+                return val;
+            }).join(', ');
+            return `INSERT INTO ${qStart}${tableName}${qEnd} (${cols}) VALUES (${vals});`;
+        }).join('\n');
+
+        downloadFile(sql, `export_${Date.now()}.sql`, 'application/sql');
+        setShowExport(false);
+    };
+
     if (loading) {
         return (
             <div className="flex-1 flex items-center justify-center">
@@ -118,10 +189,10 @@ export default function DataTable({
     }
 
     return (
-        <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex-1 overflow-auto rounded-t-xl border border-border bg-card/10 custom-scrollbar">
-                <table className="w-full min-w-max text-sm text-left border-collapse">
-                    <thead className="sticky top-0 bg-muted/90 backdrop-blur-md z-10 border-b border-border">
+        <div className="flex-1 flex flex-col overflow-hidden h-full">
+            <div className="flex-1 overflow-y-auto overflow-x-auto rounded-t-xl border border-border bg-card/10 custom-scrollbar min-h-0">
+                <table className="w-full min-w-max text-sm text-left border-collapse table-auto">
+                    <thead className="sticky top-0 bg-muted/95 backdrop-blur-md z-30 border-b border-border shadow-sm">
                         <tr>
                             <th className="w-12 px-4 py-3 font-semibold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap border-r border-border/50 bg-muted/50">
                                 #
@@ -196,8 +267,36 @@ export default function DataTable({
                 </table>
             </div>
 
-            <div className="h-14 border border-t-0 border-border bg-muted/20 rounded-b-xl flex items-center justify-between px-6 shrink-0">
+            <div className="h-14 border border-t-0 border-border bg-muted/20 rounded-b-xl flex items-center justify-between px-6 shrink-0 sticky bottom-0 z-20 backdrop-blur-md">
                 <div className="flex items-center gap-4">
+                    <div className="relative" ref={exportRef}>
+                        <button
+                            onClick={() => setShowExport(!showExport)}
+                            className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-accent/10 hover:bg-accent/20 text-accent text-[10px] font-black uppercase tracking-widest transition-all border border-accent/20"
+                        >
+                            <Download className="w-3.5 h-3.5" /> Export Data <ChevronDown className={cn("w-3 h-3 transition-transform", showExport && "rotate-180")} />
+                        </button>
+
+                        {showExport && (
+                            <div className="absolute bottom-full left-0 mb-2 w-48 bg-card border border-border rounded-xl shadow-2xl overflow-hidden glass animate-in slide-in-from-bottom-2 fade-in z-50">
+                                <button onClick={exportToCSV} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all text-left">
+                                    <FileText className="w-4 h-4 text-emerald-400" /> Export as CSV
+                                </button>
+                                <button onClick={exportToJSON} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all text-left border-t border-border/50">
+                                    <FileJson className="w-4 h-4 text-amber-400" /> Export as JSON
+                                </button>
+                                <button onClick={() => exportToSQL('mssql')} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all text-left border-t border-border/50">
+                                    <DatabaseIcon className="w-4 h-4 text-blue-400" /> INSERT Scripts (MSSQL)
+                                </button>
+                                <button onClick={() => exportToSQL('postgres')} className="w-full flex items-center gap-3 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all text-left border-t border-border/50">
+                                    <Share2 className="w-4 h-4 text-purple-400" /> INSERT Scripts (PG)
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="h-4 w-px bg-border mx-2" />
+
                     <span className="text-xs text-muted-foreground">
                         Showing <span className="text-foreground font-medium">{data.length}</span> rows
                     </span>
@@ -254,6 +353,6 @@ export default function DataTable({
                     </button>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

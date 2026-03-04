@@ -12,17 +12,17 @@ This document tracks the development progress of **Data Forge**. It serves as a 
 ## 1. 📊 Data Utility (Data handling & Migration)
 *Goal: Make data movement and schema inspection effortless.*
 
-- [ ] **Data Export Engine**
-    - [ ] Export to CSV
-    - [ ] Export to JSON
+- [x] **Data Export Engine**
+    - [x] Export to CSV
+    - [x] Export to JSON
     - [ ] Export to Excel (XLSX)
-    - [ ] Export as SQL `INSERT`,`CREATE` Scripts
+    - [x] Export as SQL `INSERT`,`CREATE` Scripts
 - [ ] **Visual Query Builder**
     - [ ] Drag-and-drop table fields
     - [ ] Visual Join manager
-- [ ] **Schema DDL Generator**
-    - [ ] "View Create Script" for Tables
-    - [ ] "View Create Script" for Views/Procedures
+- [x] **Schema DDL Generator**
+    - [x] "View Create Script" for Tables
+    - [x] "View Create Script" for Views/Procedures
 - [ ] **Import Wizard**
     - [ ] Import from CSV/JSON to existing tables
 
