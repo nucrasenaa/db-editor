@@ -401,17 +401,24 @@ export default function Sidebar({ config, onObjectSelect, onMetadataLoad, select
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                             <button
+                                onClick={() => onAddClick('er-diagram' as any)}
+                                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 transition-all group col-span-2"
+                            >
+                                <Share2 className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                                <span className="text-[8px] font-black uppercase tracking-tighter text-blue-400/70">Architect</span>
+                            </button>
+                            <button
                                 onClick={() => onAddClick('query-builder')}
                                 className="flex flex-col items-center gap-2 p-3 rounded-xl bg-purple-500/5 hover:bg-purple-500/10 border border-purple-500/10 transition-all group"
                             >
-                                <LayoutDashboard className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+                                <LayoutDashboard className="w-3.5 h-3.5 text-purple-400 group-hover:scale-110 transition-transform" />
                                 <span className="text-[8px] font-black uppercase tracking-tighter text-purple-400/70">Builder</span>
                             </button>
                             <button
                                 onClick={() => onAddClick('import-wizard')}
                                 className="flex flex-col items-center gap-2 p-3 rounded-xl bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 transition-all group"
                             >
-                                <Upload className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+                                <Upload className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
                                 <span className="text-[8px] font-black uppercase tracking-tighter text-emerald-400/70">Import</span>
                             </button>
                         </div>

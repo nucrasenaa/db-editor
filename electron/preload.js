@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('electron', {
         metadata: (config) => ipcRenderer.invoke('db:metadata', config),
         update: (args) => ipcRenderer.invoke('db:update', args),
         procSnippet: (args) => ipcRenderer.invoke('db:procedure-snippet', args),
-        getDDL: (args) => ipcRenderer.invoke('db:get-ddl', args)
+        getDDL: (args) => ipcRenderer.invoke('db:get-ddl', args),
+        erd: (config) => ipcRenderer.invoke('db:erd', config)
     }
 });

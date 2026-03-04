@@ -5,13 +5,14 @@ import ConnectionForm from '@/components/ConnectionForm';
 import Sidebar from '@/components/Sidebar';
 import QueryEditor from '@/components/QueryEditor';
 import DataTable from '@/components/DataTable';
-import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link, Maximize2, Github, PlusCircle, Layers, Zap, RotateCcw } from 'lucide-react';
+import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link, Maximize2, Github, PlusCircle, Layers, Zap, RotateCcw, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiRequest } from '@/lib/api';
 import TableDesigner from '@/components/TableDesigner';
 import ImportWizard from '@/components/ImportWizard';
 import VisualQueryBuilder from '@/components/VisualQueryBuilder';
 import ExecutionPlan from '@/components/ExecutionPlan';
+import ERDiagram from '@/components/ERDiagram';
 import { saveToHistory } from '@/lib/history';
 
 interface ConnectionHistory {
@@ -36,7 +37,7 @@ interface ResultSet {
 
 interface Tab {
   id: string;
-  type: 'table' | 'query' | 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder';
+  type: 'table' | 'query' | 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'er-diagram';
   title: string;
   database: string;
   sqlQuery: string;
@@ -473,6 +474,8 @@ export default function Home() {
       title = 'Import Data';
     } else if (type === 'query-builder') {
       title = 'Visual Builder';
+    } else if (type === 'er-diagram' as any) {
+      title = 'ER Architect';
     }
 
     const newTab: Tab = {
@@ -714,6 +717,7 @@ export default function Home() {
               {tab.type === 'table-designer' && <PlusCircle className="w-3.5 h-3.5 shrink-0 text-blue-400" />}
               {tab.type === 'view-designer' && <Layers className="w-3.5 h-3.5 shrink-0 text-purple-400" />}
               {tab.type === 'proc-designer' && <Zap className="w-3.5 h-3.5 shrink-0 text-orange-400" />}
+              {tab.type === 'er-diagram' && <Share2 className="w-3.5 h-3.5 shrink-0 text-blue-400" />}
               <span className="text-[10px] truncate uppercase tracking-[0.15em] font-black">{tab.title}</span>
               <button
                 onClick={(e) => closeTab(tab.id, e)}
@@ -954,6 +958,8 @@ export default function Home() {
                   }}
                   onClose={() => closeTab(activeTab.id)}
                 />
+              ) : activeTab.type === 'er-diagram' ? (
+                <ERDiagram config={config} />
               ) : null}
             </>
           ) : (
