@@ -14,7 +14,8 @@ import {
     Layers,
     Table as TableIcon,
     Folder,
-    FolderOpen
+    FolderOpen,
+    PlusCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiRequest } from '@/lib/api';
@@ -24,6 +25,7 @@ interface SidebarProps {
     onObjectSelect: (objectName: string, type: 'table' | 'view' | 'procedure' | 'synonym', database?: string) => void;
     onMetadataLoad?: (dbName: string, metadata: MetadataType) => void;
     selectedObject: string | null;
+    onAddClick: (type: 'table-designer' | 'view-designer' | 'proc-designer') => void;
 }
 
 type MetadataType = {
@@ -35,7 +37,7 @@ type MetadataType = {
     synonyms: any[];
 };
 
-export default function Sidebar({ config, onObjectSelect, onMetadataLoad, selectedObject }: SidebarProps) {
+export default function Sidebar({ config, onObjectSelect, onMetadataLoad, selectedObject, onAddClick }: SidebarProps) {
     const [databases, setDatabases] = useState<any[]>([]);
     const [dbMetadata, setDbMetadata] = useState<Record<string, MetadataType>>({});
     const [loadingDb, setLoadingDb] = useState<Record<string, boolean>>({});
@@ -251,6 +253,41 @@ export default function Sidebar({ config, onObjectSelect, onMetadataLoad, select
 
     return (
         <div className="w-80 h-screen border-r border-border flex flex-col bg-card/30 glass">
+            <div className="p-4 border-b border-border space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                        <PlusCircle className="w-4 h-4 text-accent" />
+                        Object Forge
+                    </h2>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                    <button
+                        onClick={() => onAddClick('table-designer')}
+                        className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 transition-all group"
+                        title="Create New Table"
+                    >
+                        <TableIcon className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                        <span className="text-[8px] font-black uppercase tracking-tighter text-blue-400/70">Table</span>
+                    </button>
+                    <button
+                        onClick={() => onAddClick('view-designer')}
+                        className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl bg-purple-500/5 hover:bg-purple-500/10 border border-purple-500/10 transition-all group"
+                        title="Create New View"
+                    >
+                        <Layers className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+                        <span className="text-[8px] font-black uppercase tracking-tighter text-purple-400/70">View</span>
+                    </button>
+                    <button
+                        onClick={() => onAddClick('proc-designer')}
+                        className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 border border-orange-500/10 transition-all group"
+                        title="Create New Procedure"
+                    >
+                        <Zap className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
+                        <span className="text-[8px] font-black uppercase tracking-tighter text-orange-400/70">Proc</span>
+                    </button>
+                </div>
+            </div>
+
             <div className="p-4 border-b border-border space-y-4">
                 <div className="flex items-center justify-between">
                     <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">

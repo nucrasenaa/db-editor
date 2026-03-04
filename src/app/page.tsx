@@ -5,9 +5,10 @@ import ConnectionForm from '@/components/ConnectionForm';
 import Sidebar from '@/components/Sidebar';
 import QueryEditor from '@/components/QueryEditor';
 import DataTable from '@/components/DataTable';
-import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link, Maximize2, Github } from 'lucide-react';
+import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link, Maximize2, Github, PlusCircle, Layers, Zap, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiRequest } from '@/lib/api';
+import TableDesigner from '@/components/TableDesigner';
 
 interface ConnectionHistory {
   id: string;
@@ -25,7 +26,7 @@ interface ConnectionHistory {
 
 interface Tab {
   id: string;
-  type: 'table' | 'query';
+  type: 'table' | 'query' | 'table-designer' | 'view-designer' | 'proc-designer';
   title: string;
   database: string;
   sqlQuery: string;
@@ -282,6 +283,42 @@ export default function Home() {
     setActiveTabId(id);
   };
 
+  const addDesignerTab = (type: 'table-designer' | 'view-designer' | 'proc-designer') => {
+    const id = `${type}-${Date.now()}`;
+    const dialect = config.dbType || 'mssql';
+    let title = 'New Table';
+    let query = '';
+
+    if (type === 'view-designer') {
+      title = 'New View';
+      query = dialect === 'mssql'
+        ? 'CREATE VIEW [dbo].[ViewName]\nAS\nSELECT * FROM ...'
+        : 'CREATE VIEW view_name AS\nSELECT * FROM ...';
+    } else if (type === 'proc-designer') {
+      title = 'New Procedure';
+      query = dialect === 'mssql'
+        ? 'CREATE PROCEDURE [dbo].[ProcedureName]\n  @Param1 INT\nAS\nBEGIN\n  SELECT * FROM ...\nEND'
+        : 'CREATE PROCEDURE procedure_name()\nBEGIN\n  SELECT * FROM ...\nEND';
+    }
+
+    const newTab: Tab = {
+      id,
+      type,
+      title,
+      database: config.database,
+      sqlQuery: query,
+      queryResult: { data: [], columns: [], totalRows: 0 },
+      loading: false,
+      page: 1,
+      pageSize: 100,
+      sortDir: 'ASC',
+      filter: '',
+      showFilter: false
+    };
+    setTabs(prev => [...prev, newTab]);
+    setActiveTabId(id);
+  };
+
   const reloadData = () => {
     if (activeTab) {
       executeQuery(activeTab.sqlQuery);
@@ -479,6 +516,7 @@ export default function Home() {
         onObjectSelect={handleObjectSelect}
         onMetadataLoad={handleMetadataLoad}
         selectedObject={activeTab?.title || null}
+        onAddClick={addDesignerTab}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -495,7 +533,11 @@ export default function Home() {
                   : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted/50"
               )}
             >
-              {tab.type === 'table' ? <TableIcon className="w-3.5 h-3.5 shrink-0" /> : <Terminal className="w-3.5 h-3.5 shrink-0" />}
+              {tab.type === 'table' && <TableIcon className="w-3.5 h-3.5 shrink-0" />}
+              {tab.type === 'query' && <Terminal className="w-3.5 h-3.5 shrink-0" />}
+              {tab.type === 'table-designer' && <PlusCircle className="w-3.5 h-3.5 shrink-0 text-blue-400" />}
+              {tab.type === 'view-designer' && <Layers className="w-3.5 h-3.5 shrink-0 text-purple-400" />}
+              {tab.type === 'proc-designer' && <Zap className="w-3.5 h-3.5 shrink-0 text-orange-400" />}
               <span className="text-[11px] truncate uppercase tracking-wider">{tab.title}</span>
               <button
                 onClick={(e) => closeTab(tab.id, e)}
@@ -561,7 +603,7 @@ export default function Home() {
                     />
                   </div>
                 </div>
-              ) : (
+              ) : activeTab.type === 'table' ? (
                 <div className="flex-1 flex flex-col">
                   <div className="h-12 border-b border-border bg-muted/10 flex items-center px-6 gap-4 shrink-0">
                     <div className="flex-1 flex gap-4 items-center">
@@ -620,7 +662,39 @@ export default function Home() {
                     />
                   </div>
                 </div>
-              )}
+              ) : activeTab.type === 'table-designer' ? (
+                <TableDesigner
+                  dbType={config.dbType}
+                  database={activeTab.database}
+                  onExecute={(sql) => executeQuery(sql, { tabId: activeTab.id, silent: false })}
+                  loading={activeTab.loading}
+                />
+              ) : (activeTab.type === 'view-designer' || activeTab.type === 'proc-designer') ? (
+                <div className="flex-1 flex flex-col">
+                  <QueryEditor
+                    query={activeTab.sqlQuery}
+                    onQueryChange={(q) => updateTab(activeTab.id, { sqlQuery: q })}
+                    onExecute={() => executeQuery(activeTab.sqlQuery, { tabId: activeTab.id, includeCount: false })}
+                    loading={activeTab.loading}
+                    metadata={metadata}
+                    dbType={config.dbType}
+                  />
+                  <div className="h-40 border-t border-border bg-card/50 overflow-auto p-4">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">Execute Results</div>
+                    {activeTab.queryResult.data.length > 0 ? (
+                      <pre className="text-xs font-mono text-emerald-400">
+                        {JSON.stringify(activeTab.queryResult.data, null, 2)}
+                      </pre>
+                    ) : activeTab.loading ? (
+                      <div className="flex items-center gap-2 text-muted-foreground text-xs italic">
+                        <RotateCcw className="w-3 h-3 animate-spin" /> Executing command...
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground text-xs italic">No results yet. Run the command to create the object.</div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center space-y-4 opacity-40">
