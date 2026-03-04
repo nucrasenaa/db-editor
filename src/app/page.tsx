@@ -5,7 +5,7 @@ import ConnectionForm from '@/components/ConnectionForm';
 import Sidebar from '@/components/Sidebar';
 import QueryEditor from '@/components/QueryEditor';
 import DataTable from '@/components/DataTable';
-import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link } from 'lucide-react';
+import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link, Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ConnectionHistory {
@@ -16,8 +16,26 @@ interface ConnectionHistory {
   server: string;
   port: number;
   user: string;
+  password?: string;
   database: string;
   lastUsed: number;
+  rememberPassword?: boolean;
+}
+
+interface Tab {
+  id: string;
+  type: 'table' | 'query';
+  title: string;
+  database: string;
+  sqlQuery: string;
+  queryResult: { data: any[], columns: string[], totalRows: number };
+  loading: boolean;
+  page: number;
+  pageSize: number;
+  sortColumn?: string;
+  sortDir: 'ASC' | 'DESC';
+  filter: string;
+  showFilter: boolean;
 }
 
 export default function Home() {
@@ -26,19 +44,34 @@ export default function Home() {
   const [initialFormConfig, setInitialFormConfig] = useState<any>(null);
   const [history, setHistory] = useState<ConnectionHistory[]>([]);
 
-  const [selectedTable, setSelectedTable] = useState<{ name: string, database: string, type: string } | null>(null);
-  const [queryResult, setQueryResult] = useState<{ data: any[], columns: string[], totalRows: number }>({ data: [], columns: [], totalRows: 0 });
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'data' | 'query'>('query');
+  const [tabs, setTabs] = useState<Tab[]>([]);
+  const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<any>(null);
-  const [sqlQuery, setSqlQuery] = useState('SELECT TOP 100 * FROM ');
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(100);
-  const [sortColumn, setSortColumn] = useState<string | undefined>();
-  const [sortDir, setSortDir] = useState<'ASC' | 'DESC'>('ASC');
-  const [filter, setFilter] = useState('');
-  const [showFilter, setShowFilter] = useState(false);
+  const activeTab = tabs.find(t => t.id === activeTabId);
+
+  // Initial tab setup after connection
+  useEffect(() => {
+    if (config && tabs.length === 0) {
+      const dialect = config.dbType || 'mssql';
+      const initialTab: Tab = {
+        id: 'sql-main',
+        type: 'query',
+        title: 'SQL Editor',
+        database: config.database,
+        sqlQuery: dialect === 'mssql' ? 'SELECT TOP 100 * FROM ' : 'SELECT * FROM ',
+        queryResult: { data: [], columns: [], totalRows: 0 },
+        loading: false,
+        page: 1,
+        pageSize: 100,
+        sortDir: 'ASC',
+        filter: '',
+        showFilter: false
+      };
+      setTabs([initialTab]);
+      setActiveTabId(initialTab.id);
+    }
+  }, [config, tabs.length]);
 
   // Load history on mount
   useEffect(() => {
@@ -68,8 +101,10 @@ export default function Home() {
       server: newConfig.server || '',
       port: newConfig.port || 1433,
       user: newConfig.user || '',
+      password: newConfig.rememberPassword ? newConfig.password : undefined,
       database: newConfig.database || '',
-      lastUsed: Date.now()
+      lastUsed: Date.now(),
+      rememberPassword: newConfig.rememberPassword
     };
 
     const updatedHistory = [
@@ -91,12 +126,17 @@ export default function Home() {
 
   const handleDisconnect = () => {
     setConfig(null);
-    setQueryResult({ data: [], columns: [], totalRows: 0 });
-    setSelectedTable(null);
+    setTabs([]);
+    setActiveTabId(null);
     setMetadata(null);
   };
 
+  const updateTab = (tabId: string, updates: Partial<Tab>) => {
+    setTabs(prev => prev.map(t => t.id === tabId ? { ...t, ...updates } : t));
+  };
+
   const executeQuery = useCallback(async (query: string, options: {
+    tabId?: string,
     db?: string,
     p?: number,
     pSize?: number,
@@ -105,9 +145,20 @@ export default function Home() {
     includeCount?: boolean,
     silent?: boolean
   } = {}) => {
-    if (!options.silent) setLoading(true);
-    const targetDb = options.db || (selectedTable?.database) || config.database;
-    const currentPageSize = options.pSize || pageSize;
+    const targetTabId = options.tabId || activeTabId;
+    if (!targetTabId) return;
+
+    // Search current state for defaults, but don't bail if not found.
+    // The tab might have been just added to the state queue.
+    const currentTab = tabs.find(t => t.id === targetTabId);
+
+    if (!options.silent) updateTab(targetTabId, { loading: true });
+
+    const targetDb = options.db || currentTab?.database || config.database;
+    const currentPageSize = options.pSize || currentTab?.pageSize || 100;
+    const currentPage = options.p || currentTab?.page || 1;
+    const currentSortCol = options.sortCol || currentTab?.sortColumn;
+    const currentSortDir = options.sortD || currentTab?.sortDir || 'ASC';
 
     try {
       const res = await fetch('/api/db/query', {
@@ -116,20 +167,26 @@ export default function Home() {
         body: JSON.stringify({
           config: { ...config, database: targetDb },
           query,
-          page: options.p || page,
+          page: currentPage,
           pageSize: currentPageSize,
-          orderBy: options.sortCol || sortColumn,
-          orderDir: options.sortD || sortDir,
+          orderBy: currentSortCol,
+          orderDir: currentSortDir,
           includeCount: options.includeCount ?? false
         }),
       });
       const data = await res.json();
       if (data.success) {
-        setQueryResult(prev => ({
-          data: data.data,
-          columns: data.columns,
-          totalRows: options.includeCount ? data.totalRows : prev.totalRows
-        }));
+        updateTab(targetTabId, {
+          queryResult: {
+            data: data.data,
+            columns: data.columns,
+            totalRows: options.includeCount ? data.totalRows : (currentTab?.queryResult.totalRows || 0)
+          },
+          page: currentPage,
+          pageSize: currentPageSize,
+          sortColumn: currentSortCol,
+          sortDir: currentSortDir
+        });
       } else {
         alert(data.message);
       }
@@ -137,79 +194,145 @@ export default function Home() {
       console.error(err);
       if (!options.silent) alert('Failed to execute query');
     } finally {
-      if (!options.silent) setLoading(false);
+      if (!options.silent) updateTab(targetTabId, { loading: false });
     }
-  }, [config, selectedTable, page, pageSize, sortColumn, sortDir]);
+  }, [config, activeTabId, tabs]);
 
-  const handleObjectSelect = (fullName: string, type: 'table' | 'view' | 'procedure' | 'synonym', databaseName?: string) => {
+  const handleObjectSelect = async (fullName: string, type: 'table' | 'view' | 'procedure' | 'synonym', databaseName?: string) => {
     const db = databaseName || config.database;
-    setSelectedTable({ name: fullName, database: db, type });
-    setActiveTab('data');
-    setPage(1);
-    setSortColumn(undefined);
-    setSortDir('ASC');
-    setFilter('');
+    const tabId = `tab-${fullName}-${Date.now()}`;
+
+    // Create new tab
+    const newTab: Tab = {
+      id: tabId,
+      type: type === 'procedure' ? 'query' : 'table',
+      title: fullName,
+      database: db,
+      sqlQuery: '',
+      queryResult: { data: [], columns: [], totalRows: 0 },
+      loading: false,
+      page: 1,
+      pageSize: 100,
+      sortDir: 'ASC',
+      filter: '',
+      showFilter: false
+    };
 
     let query = '';
+    const dialect = config.dbType || 'mssql';
+
     if (type === 'procedure') {
-      query = `SELECT definition \nFROM [${db}].sys.sql_modules \nWHERE object_id = OBJECT_ID('[${db}].${fullName}')`;
+      try {
+        const res = await fetch('/api/db/procedure-snippet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config, fullName, type, database: db }),
+        });
+        const data = await res.json();
+        if (data.success && data.snippet) {
+          query = data.snippet;
+        } else {
+          query = dialect === 'mssql'
+            ? `SELECT definition FROM [${db}].sys.sql_modules WHERE object_id = OBJECT_ID('[${db}].${fullName}')`
+            : `SHOW CREATE PROCEDURE ${fullName}`;
+        }
+      } catch (e) {
+        query = `EXEC ${fullName}`;
+      }
     } else {
-      query = `SELECT TOP 100 * FROM [${db}].${fullName}`;
+      if (dialect === 'mssql') {
+        query = `SELECT TOP 100 * FROM [${db}].${fullName}`;
+      } else if (dialect === 'postgres') {
+        query = `SELECT * FROM ${fullName} LIMIT 100`;
+      } else {
+        query = `SELECT * FROM \`${db}\`.\`${fullName.split('.').pop()}\` LIMIT 100`;
+      }
     }
 
-    setSqlQuery(query);
-    executeQuery(query, { db, p: 1, sortCol: undefined, includeCount: true });
+    newTab.sqlQuery = query;
+    setTabs(prev => [...prev, newTab]);
+    setActiveTabId(tabId);
+
+    if (type !== 'procedure') {
+      executeQuery(query, { tabId, db, p: 1, includeCount: true });
+    }
+  };
+
+  const closeTab = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newTabs = tabs.filter(t => t.id !== id);
+    setTabs(newTabs);
+    if (activeTabId === id && newTabs.length > 0) {
+      setActiveTabId(newTabs[newTabs.length - 1].id);
+    } else if (newTabs.length === 0) {
+      setActiveTabId(null);
+    }
+  };
+
+  const addQueryTab = () => {
+    const id = `query-${Date.now()}`;
+    const dialect = config.dbType || 'mssql';
+    const newTab: Tab = {
+      id,
+      type: 'query',
+      title: 'New Query',
+      database: config.database,
+      sqlQuery: dialect === 'mssql' ? 'SELECT TOP 100 * FROM ' : 'SELECT * FROM ',
+      queryResult: { data: [], columns: [], totalRows: 0 },
+      loading: false,
+      page: 1,
+      pageSize: 100,
+      sortDir: 'ASC',
+      filter: '',
+      showFilter: false
+    };
+    setTabs(prev => [...prev, newTab]);
+    setActiveTabId(id);
   };
 
   const reloadData = () => {
-    if (selectedTable) {
-      const condition = filter.trim() ? ` WHERE ${filter}` : '';
-      const query = `SELECT * FROM [${selectedTable.database}].${selectedTable.name}${condition}`;
-      executeQuery(query);
+    if (activeTab) {
+      executeQuery(activeTab.sqlQuery);
     }
   };
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-    if (selectedTable) {
-      const condition = filter.trim() ? ` WHERE ${filter}` : '';
-      const query = `SELECT * FROM [${selectedTable.database}].${selectedTable.name}${condition}`;
-      executeQuery(query, { p: newPage });
+    if (activeTab) {
+      executeQuery(activeTab.sqlQuery, { p: newPage });
     }
   };
 
   const handleSort = (column: string) => {
-    const newDir = sortColumn === column && sortDir === 'ASC' ? 'DESC' : 'ASC';
-    setSortColumn(column);
-    setSortDir(newDir);
-    if (selectedTable) {
-      const condition = filter.trim() ? ` WHERE ${filter}` : '';
-      const query = `SELECT * FROM [${selectedTable.database}].${selectedTable.name}${condition}`;
-      executeQuery(query, { sortCol: column, sortD: newDir });
+    if (activeTab) {
+      const newDir = activeTab.sortColumn === column && activeTab.sortDir === 'ASC' ? 'DESC' : 'ASC';
+      executeQuery(activeTab.sqlQuery, { sortCol: column, sortD: newDir });
     }
   };
 
   const handlePageSizeChange = (newSize: number) => {
-    setPageSize(newSize);
-    setPage(1);
-    if (selectedTable) {
-      const condition = filter.trim() ? ` WHERE ${filter}` : '';
-      const query = `SELECT * FROM [${selectedTable.database}].${selectedTable.name}${condition}`;
-      executeQuery(query, { p: 1, pSize: newSize, includeCount: true });
+    if (activeTab) {
+      executeQuery(activeTab.sqlQuery, { p: 1, pSize: newSize, includeCount: true });
     }
   };
 
   const handleFilterSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedTable) {
-      const condition = filter.trim() ? ` WHERE ${filter}` : '';
-      const query = `SELECT * FROM [${selectedTable.database}].${selectedTable.name}${condition}`;
-      executeQuery(query, { p: 1, includeCount: true });
+    if (activeTab) {
+      // Simple heuristic: if it's a generated table query, we can append/replace WHERE
+      // Otherwise, for custom queries, this might be tricky. 
+      // For now, let's assume filtering applies primarily to 'table' tabs which have standard SELECT * FROM ...
+      if (activeTab.type === 'table') {
+        const baseQuery = activeTab.sqlQuery.split(' WHERE ')[0].split(' ORDER BY ')[0].split(' OFFSET ')[0];
+        const condition = activeTab.filter.trim() ? ` WHERE ${activeTab.filter}` : '';
+        const newQuery = `${baseQuery}${condition}`;
+        updateTab(activeTab.id, { sqlQuery: newQuery });
+        executeQuery(newQuery, { p: 1, includeCount: true });
+      }
     }
   };
 
   const handleUpdate = async (rowIndex: number, column: string, newValue: any, originalRow: any) => {
-    if (!selectedTable) return false;
+    if (!activeTab || activeTab.type !== 'table' || !config) return false;
 
     try {
       const res = await fetch('/api/db/update', {
@@ -217,8 +340,8 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           config,
-          database: selectedTable.database,
-          table: selectedTable.name,
+          database: activeTab.database,
+          table: activeTab.title, // In table tabs, title is the fullName
           updates: { [column]: newValue },
           where: originalRow
         }),
@@ -244,7 +367,7 @@ export default function Home() {
   };
 
   const handleMetadataLoad = (dbName: string, newMetadata: any) => {
-    if (dbName.toLowerCase() === (selectedTable?.database.toLowerCase() || config.database.toLowerCase())) {
+    if (dbName.toLowerCase() === (activeTab?.database.toLowerCase() || config.database.toLowerCase())) {
       setMetadata(newMetadata);
     }
   };
@@ -342,150 +465,165 @@ export default function Home() {
   }
 
   return (
-    <main className="flex h-screen overflow-hidden bg-background">
+    <div className="flex bg-background h-screen overflow-hidden">
       <Sidebar
         config={config}
         onObjectSelect={handleObjectSelect}
         onMetadataLoad={handleMetadataLoad}
-        selectedObject={selectedTable ? `${selectedTable.database}.${selectedTable.name}` : null}
+        selectedObject={activeTab?.title || null}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-border flex items-center justify-between px-6 bg-card/10 backdrop-blur-md sticky top-0 z-20">
-          <div className="flex items-center gap-4">
-            <div className="p-2 bg-accent/10 rounded-lg">
-              <Database className="w-5 h-5 text-accent" />
-            </div>
-            <div>
-              <h1 className="text-sm font-bold tracking-tight">{config.database}</h1>
-              <p className="text-[10px] text-muted-foreground font-mono">{config.server}:{config.port}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex bg-muted rounded-lg p-1">
+        {/* Header / Tab Bar */}
+        <header className="h-14 border-b border-border bg-card/30 flex items-center px-4 shrink-0 overflow-x-auto no-scrollbar gap-1">
+          {tabs.map((tab) => (
+            <div
+              key={tab.id}
+              onClick={() => setActiveTabId(tab.id)}
+              className={cn(
+                "group flex items-center gap-2 px-4 py-1.5 rounded-xl cursor-context-menu transition-all h-10 min-w-[120px] max-w-[200px] border relative",
+                activeTabId === tab.id
+                  ? "bg-accent/10 border-accent/20 text-accent font-bold"
+                  : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted/50"
+              )}
+            >
+              {tab.type === 'table' ? <TableIcon className="w-3.5 h-3.5 shrink-0" /> : <Terminal className="w-3.5 h-3.5 shrink-0" />}
+              <span className="text-[11px] truncate uppercase tracking-wider">{tab.title}</span>
               <button
-                onClick={() => setActiveTab('query')}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-1 text-xs font-semibold rounded-md transition-all",
-                  activeTab === 'query' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                )}
+                onClick={(e) => closeTab(tab.id, e)}
+                className="ml-auto opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 hover:text-red-500 rounded-md transition-all"
               >
-                <Terminal className="w-3 h-3" />
-                Query
+                <X className="w-3 h-3" />
               </button>
-              <button
-                onClick={() => setActiveTab('data')}
-                disabled={!selectedTable}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-1 text-xs font-semibold rounded-md transition-all",
-                  activeTab === 'data' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-                  !selectedTable && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                <TableIcon className="w-3 h-3" />
-                View Data
-              </button>
+              {activeTabId === tab.id && <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-accent rounded-full" />}
             </div>
+          ))}
 
-            <div className="w-px h-6 bg-border mx-2" />
+          <button
+            onClick={addQueryTab}
+            className="p-2 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground transition-all ml-1"
+            title="Open New Query"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
 
+          <div className="ml-auto flex items-center gap-3">
+            <div className="flex flex-col items-end opacity-60">
+              <span className="text-[10px] font-black tracking-[0.2em] uppercase leading-none">Status</span>
+              <span className="text-[9px] font-mono font-bold text-emerald-400">ENCRYPTED</span>
+            </div>
             <button
               onClick={handleDisconnect}
-              className="p-2 hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-all text-muted-foreground"
-              title="Disconnect"
+              className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-red-500/5 hover:bg-red-500/10 text-red-500 border border-red-500/10 text-[10px] font-black uppercase tracking-widest transition-all"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-3.5 h-3.5" /> Terminate Link
             </button>
           </div>
         </header>
 
-        <div className="flex-1 p-6 flex flex-col gap-6 overflow-hidden text-foreground">
-          {activeTab === 'query' && (
-            <div className="h-2/5 shrink-0">
-              <QueryEditor
-                onExecute={(q) => executeQuery(q, { includeCount: true })}
-                loading={loading}
-                metadata={metadata}
-                value={sqlQuery}
-                onChange={setSqlQuery}
-              />
+        {/* Workspace */}
+        <main className="flex-1 overflow-hidden relative flex flex-col">
+          {activeTab ? (
+            <>
+              {activeTab.type === 'query' ? (
+                <div className="flex-1 flex flex-col">
+                  <QueryEditor
+                    query={activeTab.sqlQuery}
+                    onQueryChange={(q) => updateTab(activeTab.id, { sqlQuery: q })}
+                    onExecute={() => executeQuery(activeTab.sqlQuery, { tabId: activeTab.id, includeCount: true })}
+                    loading={activeTab.loading}
+                    metadata={metadata}
+                    dbType={config.dbType}
+                  />
+                  <div className="flex-1 overflow-hidden">
+                    <DataTable
+                      data={activeTab.queryResult.data}
+                      columns={activeTab.queryResult.columns}
+                      loading={activeTab.loading}
+                      page={activeTab.page}
+                      pageSize={activeTab.pageSize}
+                      totalRows={activeTab.queryResult.totalRows}
+                      onPageChange={handlePageChange}
+                      onPageSizeChange={handlePageSizeChange}
+                      onSort={handleSort}
+                      sortColumn={activeTab.sortColumn}
+                      sortDir={activeTab.sortDir}
+                      onUpdate={handleUpdate} // Query tabs can also have editable results if they are simple selects
+                      allowEdit={true} // Allow editing in query results too
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col">
+                  <div className="h-12 border-b border-border bg-muted/10 flex items-center px-6 gap-4 shrink-0">
+                    <div className="flex-1 flex gap-4 items-center">
+                      <div className="flex items-center gap-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-muted/30 px-3 py-1.5 rounded-lg border border-border/50">
+                        <TableIcon className="w-3.5 h-3.5 text-blue-400" />
+                        {activeTab.title}
+                      </div>
+                      <div className="h-6 w-px bg-border/50 mx-1" />
+                      <button
+                        onClick={() => updateTab(activeTab.id, { showFilter: !activeTab.showFilter })}
+                        className={cn(
+                          "flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all",
+                          activeTab.showFilter ? "bg-accent/10 text-accent border border-accent/20" : "text-muted-foreground hover:bg-muted"
+                        )}
+                      >
+                        <Filter className="w-3.5 h-3.5" /> {activeTab.showFilter ? 'Filtering ON' : 'Quick Filter'}
+                      </button>
+                      {activeTab.showFilter && (
+                        <form onSubmit={handleFilterSearch} className="flex-1 max-w-md animate-in slide-in-from-left-2 fade-in">
+                          <div className="relative flex items-center">
+                            <Search className="absolute left-3 w-3.5 h-3.5 text-muted-foreground opacity-50" />
+                            <input
+                              type="text"
+                              placeholder="WHERE condition (e.g., id > 100 AND name LIKE '%A%')"
+                              className="w-full bg-muted/50 border border-border/50 rounded-lg pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono"
+                              value={activeTab.filter}
+                              onChange={(e) => updateTab(activeTab.id, { filter: e.target.value })}
+                              autoFocus
+                            />
+                            <button type="submit" className="hidden" />
+                          </div>
+                        </form>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-tighter">
+                        Loaded {activeTab.queryResult.data.length} of {activeTab.queryResult.totalRows}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <DataTable
+                      data={activeTab.queryResult.data}
+                      columns={activeTab.queryResult.columns}
+                      loading={activeTab.loading}
+                      page={activeTab.page}
+                      pageSize={activeTab.pageSize}
+                      totalRows={activeTab.queryResult.totalRows}
+                      onPageChange={handlePageChange}
+                      onPageSizeChange={handlePageSizeChange}
+                      onSort={handleSort}
+                      sortColumn={activeTab.sortColumn}
+                      sortDir={activeTab.sortDir}
+                      onUpdate={handleUpdate}
+                      allowEdit={true}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center space-y-4 opacity-40">
+              <div className="p-10 rounded-full bg-muted/20 border border-dashed border-border flex items-center justify-center">
+                <Maximize2 className="w-16 h-16 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-black uppercase tracking-[0.3em] text-muted-foreground">Select an object to forge</p>
             </div>
           )}
-
-          <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex items-center justify-between mb-4 shrink-0">
-              <div className="flex items-center gap-2">
-                <LayoutDashboard className="w-4 h-4 text-accent" />
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate max-w-[400px]">
-                  {selectedTable ? `${selectedTable.database}.${selectedTable.name}` : 'Query Results'}
-                </h3>
-                {activeTab === 'data' && selectedTable && (
-                  <button
-                    onClick={() => setShowFilter(!showFilter)}
-                    className={cn(
-                      "ml-4 p-1 rounded hover:bg-muted transition-colors",
-                      showFilter || filter ? "text-accent" : "text-muted-foreground"
-                    )}
-                  >
-                    <Filter className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="text-[10px] font-mono bg-accent/10 border border-accent/20 px-2 py-1 rounded text-accent">
-                  Total: {queryResult.totalRows.toLocaleString()} rows
-                </span>
-                <span className="text-[10px] font-mono bg-muted px-2 py-1 rounded text-muted-foreground">
-                  Batch: {queryResult.data.length} rows
-                </span>
-              </div>
-            </div>
-
-            {showFilter && activeTab === 'data' && (
-              <form onSubmit={handleFilterSearch} className="mb-4 flex gap-2 animate-in slide-in-from-top-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="WHERE condition (e.g. Id > 100 AND Name LIKE 'A%')"
-                    className="w-full bg-muted/50 border border-border rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                  />
-                  {filter && (
-                    <button
-                      type="button"
-                      onClick={() => { setFilter(''); }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                    >
-                      <X className="w-3 h-3 text-muted-foreground hover:text-red-500" />
-                    </button>
-                  )}
-                </div>
-                <button type="submit" className="px-4 py-2 bg-accent text-accent-foreground text-xs font-bold rounded-lg shadow-lg shadow-accent/20">
-                  Apply Filter
-                </button>
-              </form>
-            )}
-
-            <DataTable
-              data={queryResult.data}
-              columns={queryResult.columns}
-              loading={loading}
-              page={page}
-              pageSize={pageSize}
-              totalRows={queryResult.totalRows}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-              onSort={handleSort}
-              onUpdate={handleUpdate}
-              sortColumn={sortColumn}
-              sortDir={sortDir}
-            />
-          </div>
-        </div>
+        </main>
       </div>
-    </main>
+    </div>
   );
 }

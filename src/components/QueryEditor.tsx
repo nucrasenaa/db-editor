@@ -8,11 +8,12 @@ interface QueryEditorProps {
     onExecute: (query: string) => void;
     loading: boolean;
     metadata?: any;
-    value: string;
-    onChange: (value: string) => void;
+    query: string;
+    onQueryChange: (value: string) => void;
+    dbType?: string;
 }
 
-export default function QueryEditor({ onExecute, loading, metadata, value, onChange }: QueryEditorProps) {
+export default function QueryEditor({ onExecute, loading, metadata, query, onQueryChange, dbType }: QueryEditorProps) {
     const metadataRef = useRef(metadata);
 
     // Sync metadata to ref so the provider always sees the latest version
@@ -21,7 +22,7 @@ export default function QueryEditor({ onExecute, loading, metadata, value, onCha
     }, [metadata]);
 
     const handleEditorChange = (val: string | undefined) => {
-        onChange(val || '');
+        onQueryChange(val || '');
     };
 
     const handleEditorDidMount = (editor: any, monaco: any) => {
@@ -109,17 +110,20 @@ export default function QueryEditor({ onExecute, loading, metadata, value, onCha
                 <div className="flex items-center gap-4">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">SQL Editor</span>
                 </div>
+                <div className="flex flex-col items-end opacity-60">
+                    <span className="text-[10px] font-black tracking-[0.2em] uppercase leading-none">{dbType?.toUpperCase() || 'SQL'} ENGINE</span>
+                </div>
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={() => onChange('')}
+                        onClick={() => onQueryChange('')}
                         className="p-1.5 hover:bg-muted rounded-md transition-colors text-muted-foreground"
                         title="Clear"
                     >
                         <RotateCcw className="w-4 h-4" />
                     </button>
                     <button
-                        onClick={() => onExecute(value)}
-                        disabled={loading || !value.trim()}
+                        onClick={() => onExecute(query)}
+                        disabled={loading || !query.trim()}
                         className="flex items-center gap-2 px-4 py-1.5 bg-accent hover:bg-accent/90 disabled:bg-accent/50 text-accent-foreground text-xs font-bold rounded-md transition-all shadow-lg shadow-accent/20"
                     >
                         <Play className="w-3 h-3 fill-current" />
@@ -132,7 +136,7 @@ export default function QueryEditor({ onExecute, loading, metadata, value, onCha
                     height="100%"
                     defaultLanguage="sql"
                     theme="vs-dark"
-                    value={value}
+                    value={query}
                     onChange={handleEditorChange}
                     onMount={handleEditorDidMount}
                     options={{

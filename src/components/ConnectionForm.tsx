@@ -21,6 +21,7 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
         user: 'sa',
         password: '',
         database: 'master',
+        rememberPassword: false,
         options: {
             trustServerCertificate: true,
             encrypt: false,
@@ -33,7 +34,7 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
             setConfig(prev => ({
                 ...prev,
                 ...initialConfig,
-                password: '' // Always clear password for security
+                password: initialConfig.password || ''
             }));
         }
     }, [initialConfig]);
@@ -266,23 +267,51 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
                                         onChange={(e) => setConfig({ ...config, database: e.target.value })}
                                     />
                                 </div>
+
+                                <div className="flex items-center gap-2 px-1">
+                                    <input
+                                        type="checkbox"
+                                        id="remember"
+                                        className="w-4 h-4 rounded border-border bg-muted/50 text-accent focus:ring-accent"
+                                        checked={config.rememberPassword}
+                                        onChange={(e) => setConfig({ ...config, rememberPassword: e.target.checked })}
+                                    />
+                                    <label htmlFor="remember" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider cursor-pointer select-none">
+                                        Securely Cache Credentials
+                                    </label>
+                                </div>
                             </>
                         ) : (
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
-                                    Connection String (URI)
-                                </label>
-                                <textarea
-                                    required
-                                    className="w-full h-32 bg-muted/50 border border-border/50 rounded-2xl px-5 py-4 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm resize-none"
-                                    placeholder={config.dbType === 'mssql' ? "mssql://username:password@localhost:1433/database" : "mysql://username:password@localhost:3306/database"}
-                                    value={config.connectionString}
-                                    onChange={(e) => setConfig({ ...config, connectionString: e.target.value })}
-                                />
-                                <p className="text-[10px] text-muted-foreground/60 italic px-1">
-                                    Format: {config.dbType}://user:password@host:port/database
-                                </p>
-                            </div>
+                            <>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                                        Connection String (URI)
+                                    </label>
+                                    <textarea
+                                        required
+                                        className="w-full h-32 bg-muted/50 border border-border/50 rounded-2xl px-5 py-4 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm resize-none"
+                                        placeholder={config.dbType === 'mssql' ? "mssql://username:password@localhost:1433/database" : "mysql://username:password@localhost:3306/database"}
+                                        value={config.connectionString}
+                                        onChange={(e) => setConfig({ ...config, connectionString: e.target.value })}
+                                    />
+                                    <p className="text-[10px] text-muted-foreground/60 italic px-1">
+                                        Format: {config.dbType}://user:password@host:port/database
+                                    </p>
+                                </div>
+
+                                <div className="flex items-center gap-2 px-1">
+                                    <input
+                                        type="checkbox"
+                                        id="remember-url"
+                                        className="w-4 h-4 rounded border-border bg-muted/50 text-accent focus:ring-accent"
+                                        checked={config.rememberPassword}
+                                        onChange={(e) => setConfig({ ...config, rememberPassword: e.target.checked })}
+                                    />
+                                    <label htmlFor="remember-url" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider cursor-pointer select-none">
+                                        Securely Cache Credentials
+                                    </label>
+                                </div>
+                            </>
                         )}
                     </div>
 
@@ -322,7 +351,7 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
                 <p className="text-center text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black opacity-30">
                     Enterprise Grade Secure Connector
                 </p>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

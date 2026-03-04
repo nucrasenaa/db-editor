@@ -28,6 +28,7 @@ interface DataTableProps {
     sortColumn?: string;
     sortDir?: 'ASC' | 'DESC';
     onUpdate?: (rowIndex: number, column: string, newValue: any, originalRow: any) => Promise<boolean>;
+    allowEdit?: boolean;
 }
 
 export default function DataTable({
@@ -42,7 +43,8 @@ export default function DataTable({
     onSort,
     sortColumn,
     sortDir,
-    onUpdate
+    onUpdate,
+    allowEdit
 }: DataTableProps) {
     const [editingCell, setEditingCell] = useState<{ rowIndex: number, col: string } | null>(null);
     const [editValue, setEditValue] = useState<string>('');
@@ -56,7 +58,7 @@ export default function DataTable({
     }, [editingCell]);
 
     const handleStartEdit = (rowIndex: number, col: string, value: any) => {
-        if (!onUpdate) return;
+        if (!onUpdate || !allowEdit) return;
         setEditingCell({ rowIndex, col });
         setEditValue(value === null ? '' : String(value));
     };
