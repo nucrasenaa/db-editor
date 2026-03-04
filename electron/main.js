@@ -1,6 +1,10 @@
 const { app, BrowserWindow, screen } = require('electron');
 const path = require('path');
 const isDev = require('electron-is-dev');
+const { setupIpcHandlers } = require('./ipc-handlers');
+
+// Initialize IPC handlers for database operations
+setupIpcHandlers();
 
 function createWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;

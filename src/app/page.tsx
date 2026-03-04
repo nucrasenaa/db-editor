@@ -7,6 +7,7 @@ import QueryEditor from '@/components/QueryEditor';
 import DataTable from '@/components/DataTable';
 import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link, Maximize2, Github } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { apiRequest } from '@/lib/api';
 
 interface ConnectionHistory {
   id: string;
@@ -161,20 +162,16 @@ export default function Home() {
     const currentSortDir = options.sortD || currentTab?.sortDir || 'ASC';
 
     try {
-      const res = await fetch('/api/db/query', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          config: { ...config, database: targetDb },
-          query,
-          page: currentPage,
-          pageSize: currentPageSize,
-          orderBy: currentSortCol,
-          orderDir: currentSortDir,
-          includeCount: options.includeCount ?? false
-        }),
+      const data = await apiRequest('/api/db/query', 'POST', {
+        config: { ...config, database: targetDb },
+        query,
+        page: currentPage,
+        pageSize: currentPageSize,
+        orderBy: currentSortCol,
+        orderDir: currentSortDir,
+        includeCount: options.includeCount ?? false
       });
-      const data = await res.json();
+
       if (data.success) {
         updateTab(targetTabId, {
           queryResult: {
@@ -223,12 +220,7 @@ export default function Home() {
 
     if (type === 'procedure') {
       try {
-        const res = await fetch('/api/db/procedure-snippet', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ config, fullName, type, database: db }),
-        });
-        const data = await res.json();
+        const data = await apiRequest('/api/db/procedure-snippet', 'POST', { config, fullName, type, database: db });
         if (data.success && data.snippet) {
           query = data.snippet;
         } else {
@@ -335,19 +327,14 @@ export default function Home() {
     if (!activeTab || activeTab.type !== 'table' || !config) return false;
 
     try {
-      const res = await fetch('/api/db/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          config,
-          database: activeTab.database,
-          table: activeTab.title, // In table tabs, title is the fullName
-          updates: { [column]: newValue },
-          where: originalRow
-        }),
+      const data = await apiRequest('/api/db/update', 'POST', {
+        config,
+        database: activeTab.database,
+        table: activeTab.title, // In table tabs, title is the fullName
+        updates: { [column]: newValue },
+        where: originalRow
       });
 
-      const data = await res.json();
       if (data.success) {
         if (data.rowsAffected === 0) {
           alert('No rows were updated.');
@@ -457,7 +444,7 @@ export default function Home() {
           </div>
 
           <p className="text-center text-xs text-muted-foreground/40 font-mono uppercase tracking-[0.2em]">
-            MSSQL • SECURE • PERSISTENT
+            GLO • ALO • MSSQL • SECURE • PERSISTENT
           </p>
 
           <footer className="pt-12 border-t border-border/50 flex flex-col items-center gap-6">

@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Database, Server, User, Lock, Globe, Loader2, ArrowLeft, Plus, Link, Database as DBIcon, ChevronDown } from 'lucide-react';
+import { Database, Server, User, Globe, Loader2, ArrowLeft, Link, Database as DBIcon, CheckCircle2, AlertCircle } from 'lucide-react';
+import { apiRequest } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 interface ConnectionFormProps {
@@ -51,13 +52,7 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
         setTestSuccess(false);
 
         try {
-            const res = await fetch('/api/db/test', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(connMode === 'url' ? { connectionString: config.connectionString } : config),
-            });
-
-            const data = await res.json();
+            const data = await apiRequest('/api/db/test', 'POST', connMode === 'url' ? { connectionString: config.connectionString } : config);
             if (data.success) {
                 setTestSuccess(true);
                 setTimeout(() => setTestSuccess(false), 3000);
@@ -78,13 +73,7 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
         setTestSuccess(false);
 
         try {
-            const res = await fetch('/api/db/test', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(connMode === 'url' ? { connectionString: config.connectionString } : config),
-            });
-
-            const data = await res.json();
+            const data = await apiRequest('/api/db/test', 'POST', connMode === 'url' ? { connectionString: config.connectionString } : config);
             if (data.success) {
                 onConnect(connMode === 'url' ? { ...config, server: config.connectionString.split('@')[1]?.split('/')[0] || 'MSSQL URL' } : config);
             } else {
@@ -118,7 +107,7 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
                     )}
                     <div className="text-center space-y-2">
                         <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-accent/10 mb-2">
-                            <DBIcon className="w-10 h-10 text-accent" />
+                            <img src="/icon.png" alt="Data Forge" className="w-12 h-12 object-contain" />
                         </div>
                         <h1 className="text-4xl font-black tracking-tight gradient-text uppercase">Data Forge</h1>
                         <p className="text-muted-foreground text-sm font-medium">Configure your database environment</p>

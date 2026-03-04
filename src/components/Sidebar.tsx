@@ -17,6 +17,7 @@ import {
     FolderOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { apiRequest } from '@/lib/api';
 
 interface SidebarProps {
     config: any;
@@ -47,12 +48,7 @@ export default function Sidebar({ config, onObjectSelect, onMetadataLoad, select
     const fetchDatabases = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/db/metadata', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config),
-            });
-            const data = await res.json();
+            const data = await apiRequest('/api/db/metadata', 'POST', config);
             if (data.success) {
                 setDatabases(data.metadata.databases);
                 // Automatically load the current database's metadata
@@ -74,12 +70,7 @@ export default function Sidebar({ config, onObjectSelect, onMetadataLoad, select
 
         setLoadingDb(prev => ({ ...prev, [dbName]: true }));
         try {
-            const res = await fetch('/api/db/metadata', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...config, database: dbName }),
-            });
-            const data = await res.json();
+            const data = await apiRequest('/api/db/metadata', 'POST', { ...config, database: dbName });
             if (data.success) {
                 setDbMetadata(prev => ({ ...prev, [dbName]: data.metadata }));
                 onMetadataLoad?.(dbName, data.metadata);

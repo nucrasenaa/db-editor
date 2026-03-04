@@ -13,8 +13,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SQL Server Editor | Premium Database Management",
-  description: "A modern, high-performance database editor for Microsoft SQL Server built with Next.js.",
+  title: "Data Forge | GLO • ALO Premium Database Manager",
+  description: "A modern, high-performance database editor for MSSQL, PostgreSQL, and MySQL. Secure, persistent, and developer-friendly.",
+  keywords: ["SQL Editor", "Database Manager", "MSSQL", "PostgreSQL", "MySQL", "GLO", "ALO", "Three Man Dev"],
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  }
 };
 
 export default function RootLayout({
