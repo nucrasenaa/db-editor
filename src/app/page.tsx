@@ -5,7 +5,7 @@ import ConnectionForm from '@/components/ConnectionForm';
 import Sidebar from '@/components/Sidebar';
 import QueryEditor from '@/components/QueryEditor';
 import DataTable from '@/components/DataTable';
-import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link, Maximize2 } from 'lucide-react';
+import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link, Maximize2, Github } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ConnectionHistory {
@@ -459,6 +459,27 @@ export default function Home() {
           <p className="text-center text-xs text-muted-foreground/40 font-mono uppercase tracking-[0.2em]">
             MSSQL • SECURE • PERSISTENT
           </p>
+
+          <footer className="pt-12 border-t border-border/50 flex flex-col items-center gap-6">
+            <a
+              href="https://github.com/nucrasenaa/db-editor"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-muted/30 hover:bg-accent/10 border border-border/50 hover:border-accent/20 transition-all"
+            >
+              <Github className="w-5 h-5 group-hover:text-accent group-hover:scale-110 transition-all" />
+              <span className="text-xs font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 group-hover:text-accent transition-all">Source Repository</span>
+            </a>
+
+            <div className="text-center space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40">
+                THREE MAN DEV © 2026. ALL RIGHTS RESERVED.
+              </p>
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-accent/40">
+                BANGKOK, THAILAND
+              </p>
+            </div>
+          </footer>
         </div>
       </div>
     );
@@ -623,6 +644,22 @@ export default function Home() {
             </div>
           )}
         </main>
+
+        <footer className="h-8 border-t border-border/30 bg-card/20 flex items-center justify-between px-6 shrink-0 shrink-0">
+          <div className="flex items-center gap-4 text-[9px] font-black uppercase tracking-widest text-muted-foreground/30">
+            <span>Three Man Dev © 2026</span>
+            <div className="w-1 h-1 rounded-full bg-border" />
+            <span>Bangkok, Thailand</span>
+          </div>
+          <a
+            href="https://github.com/nucrasenaa/db-editor"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/30 hover:text-accent transition-colors"
+          >
+            <Github className="w-3 h-3" /> GitHub
+          </a>
+        </footer>
       </div>
     </div>
   );
