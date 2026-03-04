@@ -262,7 +262,7 @@ export default function Home() {
 
       if (data.success) {
         const newTab: Tab = {
-          id: Date.now().toString(),
+          id: `ddl-${Date.now()}`,
           type: 'query',
           title: `DDL: ${fullName.split('.').pop()}`,
           database: database,
@@ -280,8 +280,9 @@ export default function Home() {
       } else {
         alert('Error fetching DDL: ' + data.message);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert('Error fetching DDL: ' + (err.message || 'Unknown error'));
     }
   };
 
