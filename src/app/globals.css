@@ -11,10 +11,10 @@
   --color-muted-foreground: #8a8a93;
   --color-border: #1e1e21;
   --color-surface: #121214;
-  
+
   --radius-xl: 12px;
   --radius-2xl: 16px;
-  
+
   --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 20px -5px rgba(59, 130, 246, 0.3);
 }
@@ -25,6 +25,32 @@
   --accent: #3b82f6;
   --accent-glow: rgba(59, 130, 246, 0.15);
   --selection: rgba(59, 130, 246, 0.2);
+}
+
+.light {
+  --color-background: #ffffff;
+  --color-foreground: #1a1a1a;
+  --color-card: #f8f9fa;
+  --color-muted: #f1f3f5;
+  --color-muted-foreground: #6c757d;
+  --color-border: #dee2e6;
+  --color-surface: #ffffff;
+
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+}
+
+.light .glass {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: #ccd0d4;
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #adb5bd;
 }
 
 body {
@@ -80,9 +106,11 @@ body {
     transform: translateX(-100%);
     width: 30%;
   }
+
   50% {
     width: 60%;
   }
+
   100% {
     transform: translateX(333%);
     width: 30%;

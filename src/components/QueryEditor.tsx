@@ -14,9 +14,10 @@ interface QueryEditorProps {
     query: string;
     onQueryChange: (value: string) => void;
     dbType?: string;
+    theme?: 'dark' | 'light';
 }
 
-export default function QueryEditor({ onExecute, loading, metadata, allMetadata, query, onQueryChange, dbType }: QueryEditorProps) {
+export default function QueryEditor({ onExecute, loading, metadata, allMetadata, query, onQueryChange, dbType, theme }: QueryEditorProps) {
     const [showCopilot, setShowCopilot] = useState(false);
     const metadataRef = useRef(metadata);
     const allMetadataRef = useRef(allMetadata);
@@ -269,7 +270,7 @@ export default function QueryEditor({ onExecute, loading, metadata, allMetadata,
                 <Editor
                     height="100%"
                     defaultLanguage="sql"
-                    theme="vs-dark"
+                    theme={theme === 'light' ? 'light' : 'vs-dark'}
                     value={query}
                     onChange={handleEditorChange}
                     onMount={handleEditorDidMount}

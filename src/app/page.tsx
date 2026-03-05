@@ -5,7 +5,7 @@ import ConnectionForm from '@/components/ConnectionForm';
 import Sidebar from '@/components/Sidebar';
 import QueryEditor from '@/components/QueryEditor';
 import DataTable from '@/components/DataTable';
-import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link, Maximize2, Github, PlusCircle, Layers, Zap, RotateCcw, Share2, Sparkles, AlertCircle, Menu } from 'lucide-react';
+import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link, Maximize2, Github, PlusCircle, Layers, Zap, RotateCcw, Share2, Sparkles, AlertCircle, Menu, Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiRequest } from '@/lib/api';
 import TableDesigner from '@/components/TableDesigner';
@@ -79,7 +79,28 @@ export default function Home() {
   const [metadata, setMetadata] = useState<any>(null);
   const [allMetadata, setAllMetadata] = useState<Record<string, any>>({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const autoFetchedTabs = React.useRef<Set<string>>(new Set());
+
+  // Load theme from localStorage and apply to root
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('forge-theme') as 'dark' | 'light';
+    if (savedTheme) {
+      setTheme(savedTheme);
+      if (savedTheme === 'light') document.documentElement.classList.add('light');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    localStorage.setItem('forge-theme', newTheme);
+    if (newTheme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+  };
 
   const activeTab = tabs.find(t => t.id === activeTabId);
 
@@ -686,16 +707,36 @@ export default function Home() {
   if (!config) {
     if (showForm) {
       return (
-        <ConnectionForm
-          onConnect={handleConnect}
-          onCancel={() => setShowForm(false)}
-          initialConfig={initialFormConfig}
-        />
+        <div>
+          <ConnectionForm
+            onConnect={handleConnect}
+            onCancel={() => setShowForm(false)}
+            initialConfig={initialFormConfig}
+          />
+        </div>
       );
     }
 
     return (
-      <div className="min-h-screen flex items-center justify-center p-8 bg-background overflow-y-auto">
+      <div className="min-h-screen flex items-center justify-center p-8 bg-background overflow-y-auto transition-colors duration-300 relative">
+        <div className="absolute top-8 right-8 z-50">
+          <button
+            onClick={toggleTheme}
+            className="group flex items-center gap-3 px-4 py-2 rounded-xl bg-card/50 hover:bg-accent/10 border border-border/50 hover:border-accent/20 transition-all backdrop-blur-sm"
+          >
+            {theme === 'dark' ? (
+              <>
+                <Moon className="w-4 h-4 group-hover:text-accent group-hover:rotate-12 transition-all text-muted-foreground" />
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 group-hover:text-accent transition-all text-muted-foreground">Dark mode</span>
+              </>
+            ) : (
+              <>
+                <Sun className="w-4 h-4 group-hover:text-accent group-hover:rotate-45 transition-all text-muted-foreground" />
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 group-hover:text-accent transition-all text-muted-foreground">Light mode</span>
+              </>
+            )}
+          </button>
+        </div>
         <div className="w-full max-w-4xl space-y-12">
           <div className="text-center space-y-4">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-accent/10 mb-2">
@@ -781,24 +822,27 @@ export default function Home() {
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground/40 font-bold mt-2">
                   {new Date(conn.lastUsed).toLocaleDateString()}
                 </div>
-              </div>
-            ))}
-          </div>
+              </div >
+            ))
+            }
+          </div >
 
           <p className="text-center text-xs text-muted-foreground/40 font-mono uppercase tracking-[0.2em]">
             PostgreSQL • MySQL • MSSQL • SECURE • PERSISTENT
           </p>
 
           <footer className="pt-12 border-t border-border/50 flex flex-col items-center gap-6">
-            <a
-              href="https://github.com/nucrasenaa/db-editor"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-muted/30 hover:bg-accent/10 border border-border/50 hover:border-accent/20 transition-all"
-            >
-              <Github className="w-5 h-5 group-hover:text-accent group-hover:scale-110 transition-all" />
-              <span className="text-xs font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 group-hover:text-accent transition-all">Source Repository</span>
-            </a>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://github.com/nucrasenaa/db-editor"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-muted/30 hover:bg-accent/10 border border-border/50 hover:border-accent/20 transition-all"
+              >
+                <Github className="w-5 h-5 group-hover:text-accent group-hover:scale-110 transition-all" />
+                <span className="text-xs font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 group-hover:text-accent transition-all">Source Repository</span>
+              </a>
+            </div>
 
             <div className="text-center space-y-2">
               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40">
@@ -809,13 +853,13 @@ export default function Home() {
               </p>
             </div>
           </footer>
-        </div>
-      </div>
+        </div >
+      </div >
     );
   }
 
   return (
-    <div className="flex bg-background h-screen overflow-hidden relative">
+    <div className="flex bg-background h-screen overflow-hidden relative transition-colors duration-300">
       <div className={cn(
         "fixed inset-0 bg-black/50 z-[60] lg:hidden transition-opacity duration-300",
         sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
@@ -931,6 +975,7 @@ export default function Home() {
                     metadata={metadata}
                     allMetadata={allMetadata}
                     dbType={config.dbType}
+                    theme={theme}
                   />
                   <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative">
                     {activeTab.resultSets && activeTab.resultSets.length > 1 && !activeTab.showPlan && (
@@ -1270,14 +1315,27 @@ export default function Home() {
             <div className="w-1 h-1 rounded-full bg-border" />
             <span className="text-accent/40">v1.1.0</span>
           </div>
-          <a
-            href="https://github.com/nucrasenaa/db-editor"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/30 hover:text-accent transition-colors"
-          >
-            <Github className="w-3 h-3" /> GitHub
-          </a>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/30 hover:text-accent transition-all group"
+            >
+              {theme === 'dark' ? (
+                <><Moon className="w-3 h-3 group-hover:rotate-12 transition-transform" /> DARK MODE</>
+              ) : (
+                <><Sun className="w-3 h-3 group-hover:rotate-45 transition-transform" /> LIGHT MODE</>
+              )}
+            </button>
+            <div className="w-px h-3 bg-border/20" />
+            <a
+              href="https://github.com/nucrasenaa/db-editor"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/30 hover:text-accent transition-colors"
+            >
+              <Github className="w-3 h-3" /> GitHub
+            </a>
+          </div>
         </footer>
       </div >
     </div >
