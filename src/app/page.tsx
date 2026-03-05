@@ -60,6 +60,7 @@ interface Tab {
   sortDir: 'ASC' | 'DESC';
   filter: string;
   showFilter: boolean;
+  tableName?: string;
   executionPlan?: any[];
   showPlan?: boolean;
   error?: string;
@@ -396,7 +397,8 @@ export default function Home() {
       pageSize: 100,
       sortDir: 'ASC',
       filter: '',
-      showFilter: false
+      showFilter: false,
+      tableName: type === 'procedure' ? undefined : fullName
     };
 
     let query = '';
@@ -637,31 +639,39 @@ export default function Home() {
   };
 
   const handleUpdate = async (rowIndex: number, column: string, newValue: any, originalRow: any) => {
-    if (!activeTab || activeTab.type !== 'table' || !config) return false;
+    if (!activeTab || !config) return false;
+
+    const tableName = activeTab.tableName || (activeTab.type === 'table' ? activeTab.title : null);
+
+    if (!tableName) {
+      alert('🔒 Inline editing requires a target table.\n\nPlease open the table directly from the Explorer to enable editing, or use a query that allows identification of the source table.');
+      return false;
+    }
 
     try {
       const data = await apiRequest('/api/db/update', 'POST', {
         config,
         database: activeTab.database,
-        table: activeTab.title, // In table tabs, title is the fullName
+        table: tableName,
         updates: { [column]: newValue },
         where: originalRow
       });
 
       if (data.success) {
         if (data.rowsAffected === 0) {
-          alert('No rows were updated.');
+          alert('Update successful but 0 rows were affected. The row might have been changed or deleted by another user.');
           return false;
         }
-        reloadData();
+        // Use a slight delay to ensure the database has finished the write
+        setTimeout(() => reloadData(), 100);
         return true;
       } else {
-        alert(data.message);
+        alert('Update Error: ' + data.message);
         return false;
       }
     } catch (err: any) {
-      console.error(err);
-      alert(err.message || 'Update failed');
+      console.error('Update operation failed:', err);
+      alert('Update failed: ' + (err.message || 'Unknown network error'));
       return false;
     }
   };

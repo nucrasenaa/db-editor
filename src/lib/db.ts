@@ -74,6 +74,7 @@ export async function getDbProxy(config: any): Promise<DbProxy> {
     return {
       query: async (sql: string) => {
         const [rows] = await connection.query(sql);
+        // If rows is a ResultSetHeader (for updates/inserts), it has affectedRows
         return rows;
       },
       close: async () => {
@@ -97,7 +98,11 @@ export async function getDbProxy(config: any): Promise<DbProxy> {
     return {
       query: async (sql: string) => {
         const res = await pool.query(sql);
-        return res.rows;
+        const rows = res.rows as any;
+        if (rows && typeof rows === 'object') {
+          rows.rowCount = res.rowCount;
+        }
+        return rows;
       },
       close: async () => {
         await pool.end();
@@ -122,10 +127,19 @@ export async function getDbProxy(config: any): Promise<DbProxy> {
     const proxy: DbProxy = {
       query: async (sql: string) => {
         const result = await pool.request().query(sql) as any;
-        if (result.recordsets && result.recordsets.length > 1) {
-          return result.recordsets;
+        let data = (result.recordsets && result.recordsets.length > 1)
+          ? result.recordsets
+          : result.recordset;
+
+        // Attach metadata to the returned data (array or object)
+        if (data && typeof data === 'object') {
+          data.rowsAffected = result.rowsAffected;
+        } else if (data === undefined) {
+          // For queries with no recordset (like UPDATE), return a dummy object with metadata
+          data = { rowsAffected: result.rowsAffected };
         }
-        return result.recordset;
+
+        return data;
       },
       close: async () => {
         await pool.close();

@@ -256,10 +256,20 @@ export default function DataTable({
                                                         className="flex-1 bg-muted border border-accent rounded px-2 py-1 text-xs focus:outline-none"
                                                         disabled={isSaving}
                                                     />
-                                                    <button onClick={handleSave} disabled={isSaving} className="p-1 text-green-500 hover:bg-green-500/10 rounded">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); handleSave(); }}
+                                                        disabled={isSaving}
+                                                        className="p-1 text-green-500 hover:bg-green-500/10 rounded"
+                                                    >
                                                         {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                                                     </button>
-                                                    <button onClick={handleCancelEdit} disabled={isSaving} className="p-1 text-red-500 hover:bg-red-500/10 rounded">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }}
+                                                        disabled={isSaving}
+                                                        className="p-1 text-red-500 hover:bg-red-500/10 rounded"
+                                                    >
                                                         <CloseIcon className="w-3 h-3" />
                                                     </button>
                                                 </div>
