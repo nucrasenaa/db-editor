@@ -22,7 +22,7 @@ import AISettings from '@/components/AISettings';
 import PerformanceAdvisor from '@/components/PerformanceAdvisor';
 import { saveToHistory } from '@/lib/history';
 import { popoutTab } from '@/lib/popout';
-import { Activity, Users, GitCompare } from 'lucide-react';
+import { Activity, Users, GitCompare, Settings } from 'lucide-react';
 
 interface ConnectionHistory {
   id: string;
@@ -711,7 +711,14 @@ export default function Home() {
             {history.map((conn) => (
               <div
                 key={conn.id}
-                onClick={() => { setInitialFormConfig(conn); setShowForm(true); }}
+                onClick={() => {
+                  if (conn.rememberPassword) {
+                    handleConnect(conn);
+                  } else {
+                    setInitialFormConfig(conn);
+                    setShowForm(true);
+                  }
+                }}
                 className="h-48 rounded-2xl border border-border bg-card/50 p-6 flex flex-col justify-between hover:border-accent hover:shadow-xl hover:shadow-accent/5 transition-all cursor-pointer group relative overflow-hidden"
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-accent opacity-0 group-hover:opacity-100 transition-all" />
@@ -726,6 +733,17 @@ export default function Home() {
                         <Link className="w-3 h-3" />
                       </div>
                     )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setInitialFormConfig(conn);
+                        setShowForm(true);
+                      }}
+                      className="p-2 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit Connection"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={(e) => removeFromHistory(conn.id, e)}
                       className="p-2 hover:bg-red-500/10 text-muted-foreground hover:text-red-500 rounded-lg transition-all opacity-0 group-hover:opacity-100"

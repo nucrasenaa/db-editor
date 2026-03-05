@@ -74,6 +74,7 @@ export default function Sidebar({
     const [expanded, setExpanded] = useState<Record<string, boolean>>({
         'root-databases': true,
     });
+    const [advancedExpanded, setAdvancedExpanded] = useState(true);
 
     const searchRef = React.useRef<HTMLInputElement>(null);
 
@@ -312,44 +313,10 @@ export default function Sidebar({
 
     return (
         <div className={cn("w-80 h-screen border-r border-border flex flex-col bg-background/50 backdrop-blur-2xl transition-all duration-300", className)}>
-            {/* Object Forge (Action Buttons) */}
-            <div className="p-4 border-b border-border space-y-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.3em] flex items-center gap-2">
-                        <PlusCircle className="w-3.5 h-3.5 text-accent" />
-                        Object Forge
-                    </h2>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                    <button
-                        onClick={() => onAddClick('table-designer')}
-                        className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 transition-all group"
-                        title="Create New Table"
-                    >
-                        <TableIcon className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-[8px] font-black uppercase tracking-tighter text-blue-400/70">Table</span>
-                    </button>
-                    <button
-                        onClick={() => onAddClick('view-designer')}
-                        className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl bg-purple-500/5 hover:bg-purple-500/10 border border-purple-500/10 transition-all group"
-                        title="Create New View"
-                    >
-                        <Layers className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-[8px] font-black uppercase tracking-tighter text-purple-400/70">View</span>
-                    </button>
-                    <button
-                        onClick={() => onAddClick('proc-designer')}
-                        className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 border border-orange-500/10 transition-all group"
-                        title="Create New Procedure"
-                    >
-                        <Zap className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-[8px] font-black uppercase tracking-tighter text-orange-400/70">Proc</span>
-                    </button>
-                </div>
-            </div>
+
 
             {/* Sidebar Tabs */}
-            <div className="flex px-3 gap-1 overflow-hidden shrink-0 mt-4">
+            <div className="flex px-3 gap-1 overflow-hidden shrink-0 mt-2">
                 {[
                     { id: 'explorer', icon: Layers, label: 'Search' },
                     { id: 'history', icon: Clock, label: 'Past Exec' },
@@ -411,69 +378,107 @@ export default function Sidebar({
                         )}
                     </div>
 
-                    {/* Advanced Forge Tools */}
+                    {/* Integrated Forge Tools */}
                     <div className="mx-3 mb-4 mt-auto pt-4 border-t border-border/30 space-y-3 shrink-0">
-                        <div className="flex items-center gap-2 px-2 text-[9px] font-black uppercase tracking-widest text-accent opacity-60">
-                            <Zap className="w-2.5 h-2.5" /> Advanced Forge
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                            <button
-                                onClick={() => onAddClick('ai-settings' as any)}
-                                className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-purple-500/5 hover:bg-purple-600/10 border border-purple-500/10 transition-all group"
-                                title="AI Engine & Settings"
-                            >
-                                <Sparkles className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
-                                <span className="text-[8px] font-bold uppercase tracking-tighter text-purple-400/70">AI</span>
-                            </button>
-                            <button
-                                onClick={() => onAddClick('server-monitor' as any)}
-                                className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 transition-all group"
-                                title="Server Health & Monitor"
-                            >
-                                <Activity className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-                                <span className="text-[8px] font-bold uppercase tracking-tighter text-emerald-400/70">Health</span>
-                            </button>
-                            <button
-                                onClick={() => onAddClick('user-manager' as any)}
-                                className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-indigo-500/5 hover:bg-indigo-500/10 border border-indigo-500/10 transition-all group"
-                                title="User & Permission Manager"
-                            >
-                                <Users className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
-                                <span className="text-[8px] font-bold uppercase tracking-tighter text-indigo-400/70">Users</span>
-                            </button>
-                            <button
-                                onClick={() => onAddClick('schema-compare' as any)}
-                                className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 border border-orange-500/10 transition-all group"
-                                title="Schema Comparison (Diff)"
-                            >
-                                <GitCompare className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
-                                <span className="text-[8px] font-bold uppercase tracking-tighter text-orange-400/70">Diff</span>
-                            </button>
-                            <button
-                                onClick={() => onAddClick('er-diagram' as any)}
-                                className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 transition-all group"
-                                title="ER Architect (Visual ERD)"
-                            >
-                                <Share2 className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
-                                <span className="text-[8px] font-bold uppercase tracking-tighter text-blue-400/70">ERD</span>
-                            </button>
-                            <button
-                                onClick={() => onAddClick('query-builder')}
-                                className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-purple-500/5 hover:bg-purple-600/10 border border-purple-500/10 transition-all group"
-                                title="Visual Query Builder"
-                            >
-                                <LayoutDashboard className="w-3.5 h-3.5 text-purple-400 group-hover:scale-110 transition-transform" />
-                                <span className="text-[8px] font-bold uppercase tracking-tighter text-purple-400/70">Builder</span>
-                            </button>
-                            <button
-                                onClick={() => onAddClick('performance-advisor')}
-                                className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-emerald-500/5 hover:bg-emerald-600/10 border border-emerald-500/10 transition-all group"
-                                title="Performance Advisor"
-                            >
-                                <TrendingUp className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-                                <span className="text-[8px] font-bold uppercase tracking-tighter text-emerald-400/70">Advisor</span>
+                        <div
+                            className="flex items-center justify-between px-2 cursor-pointer group/header"
+                            onClick={() => setAdvancedExpanded(!advancedExpanded)}
+                        >
+                            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-accent opacity-60 group-hover/header:opacity-100 transition-opacity">
+                                <Zap className="w-2.5 h-2.5" /> FORGE TOOLS & ACTIONS
+                            </div>
+                            <button className="p-1 hover:bg-muted rounded text-muted-foreground/50 hover:text-accent transition-all">
+                                {advancedExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                             </button>
                         </div>
+
+                        {advancedExpanded && (
+                            <div className="grid grid-cols-3 gap-2 animate-in slide-in-from-bottom-2 duration-300">
+                                {/* Creation Actions */}
+                                <button
+                                    onClick={() => onAddClick('table-designer')}
+                                    className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 transition-all group"
+                                    title="Create New Table"
+                                >
+                                    <TableIcon className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[7px] font-black uppercase tracking-tighter text-blue-400/70 whitespace-nowrap text-center">CREATE<br />TABLE</span>
+                                </button>
+                                <button
+                                    onClick={() => onAddClick('view-designer')}
+                                    className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl bg-purple-500/5 hover:bg-purple-500/10 border border-purple-500/10 transition-all group"
+                                    title="Create New View"
+                                >
+                                    <Layers className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[7px] font-black uppercase tracking-tighter text-purple-400/70 whitespace-nowrap text-center">CREATE<br />VIEW</span>
+                                </button>
+                                <button
+                                    onClick={() => onAddClick('proc-designer')}
+                                    className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 border border-orange-500/10 transition-all group"
+                                    title="Create New Procedure"
+                                >
+                                    <Zap className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[7px] font-black uppercase tracking-tighter text-orange-400/70 whitespace-nowrap text-center">CREATE<br />PROC</span>
+                                </button>
+
+                                {/* Advanced Tools */}
+                                <button
+                                    onClick={() => onAddClick('ai-settings' as any)}
+                                    className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-purple-500/5 hover:bg-purple-600/10 border border-purple-500/10 transition-all group"
+                                    title="AI Engine & Settings"
+                                >
+                                    <Sparkles className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[8px] font-bold uppercase tracking-tighter text-purple-400/70">AI Engine</span>
+                                </button>
+                                <button
+                                    onClick={() => onAddClick('server-monitor' as any)}
+                                    className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 transition-all group"
+                                    title="Server Health & Monitor"
+                                >
+                                    <Activity className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[8px] font-bold uppercase tracking-tighter text-emerald-400/70">Health</span>
+                                </button>
+                                <button
+                                    onClick={() => onAddClick('user-manager' as any)}
+                                    className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-indigo-500/5 hover:bg-indigo-500/10 border border-indigo-500/10 transition-all group"
+                                    title="User & Permission Manager"
+                                >
+                                    <Users className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[8px] font-bold uppercase tracking-tighter text-indigo-400/70">Users</span>
+                                </button>
+                                <button
+                                    onClick={() => onAddClick('schema-compare' as any)}
+                                    className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 border border-orange-500/10 transition-all group"
+                                    title="Schema Comparison (Diff)"
+                                >
+                                    <GitCompare className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[8px] font-bold uppercase tracking-tighter text-orange-400/70">Diff</span>
+                                </button>
+                                <button
+                                    onClick={() => onAddClick('er-diagram' as any)}
+                                    className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 transition-all group"
+                                    title="ER Architect (Visual ERD)"
+                                >
+                                    <Share2 className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[8px] font-bold uppercase tracking-tighter text-blue-400/70">ERD</span>
+                                </button>
+                                <button
+                                    onClick={() => onAddClick('query-builder')}
+                                    className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-purple-500/5 hover:bg-purple-600/10 border border-purple-500/10 transition-all group"
+                                    title="Visual Query Builder"
+                                >
+                                    <LayoutDashboard className="w-3.5 h-3.5 text-purple-400 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[8px] font-bold uppercase tracking-tighter text-purple-400/70">Builder</span>
+                                </button>
+                                <button
+                                    onClick={() => onAddClick('performance-advisor')}
+                                    className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-emerald-500/5 hover:bg-emerald-600/10 border border-emerald-500/10 transition-all group"
+                                    title="Performance Advisor"
+                                >
+                                    <TrendingUp className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[8px] font-bold uppercase tracking-tighter text-emerald-400/70">Advisor</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </>
             )}
