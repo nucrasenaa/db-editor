@@ -315,7 +315,7 @@ export default function DataTable({
 
                     <div className="hidden md:block h-4 w-px bg-border mx-2" />
 
-                    <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start border-t border-border/10 md:border-0 pt-2 md:pt-0">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full md:w-auto justify-between md:justify-start border-t border-border/10 md:border-0 pt-2 md:pt-0">
                         <div className="flex items-center gap-2">
                             <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider opacity-60">Page:</span>
                             <span className="text-xs text-foreground font-bold bg-muted/50 px-2 py-0.5 rounded border border-border/50">{page}</span>

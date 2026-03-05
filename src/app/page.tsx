@@ -74,6 +74,7 @@ export default function Home() {
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<any>(null);
+  const [allMetadata, setAllMetadata] = useState<Record<string, any>>({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const activeTab = tabs.find(t => t.id === activeTabId);
@@ -592,6 +593,7 @@ export default function Home() {
   };
 
   const handleMetadataLoad = (dbName: string, newMetadata: any) => {
+    setAllMetadata(prev => ({ ...prev, [dbName]: newMetadata }));
     if (dbName.toLowerCase() === (activeTab?.database.toLowerCase() || config.database.toLowerCase())) {
       setMetadata(newMetadata);
     }
@@ -825,6 +827,7 @@ export default function Home() {
                     onExecute={(q) => executeQuery(q || activeTab.sqlQuery, { tabId: activeTab.id, includeCount: true })}
                     loading={activeTab.loading}
                     metadata={metadata}
+                    allMetadata={allMetadata}
                     dbType={config.dbType}
                   />
                   <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative">

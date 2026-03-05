@@ -143,7 +143,7 @@ export default function UserManager({ config, onClose }: UserManagerProps) {
                     </div>
                     <div>
                         <h2 className="text-sm font-black uppercase tracking-widest leading-none mb-1">User & Permission Manager</h2>
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest">ACCESS CONTROL FORGE</span>
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest hidden sm:inline">ACCESS CONTROL FORGE</span>
                     </div>
                 </div>
 

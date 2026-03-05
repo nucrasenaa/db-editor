@@ -10,14 +10,16 @@ interface QueryEditorProps {
     onExecute: (query: string) => void;
     loading: boolean;
     metadata?: any;
+    allMetadata?: Record<string, any>;
     query: string;
     onQueryChange: (value: string) => void;
     dbType?: string;
 }
 
-export default function QueryEditor({ onExecute, loading, metadata, query, onQueryChange, dbType }: QueryEditorProps) {
+export default function QueryEditor({ onExecute, loading, metadata, allMetadata, query, onQueryChange, dbType }: QueryEditorProps) {
     const [showCopilot, setShowCopilot] = useState(false);
     const metadataRef = useRef(metadata);
+    const allMetadataRef = useRef(allMetadata);
     const queryRef = useRef(query);
 
     // Sync query to ref for auto-execute listener
@@ -41,12 +43,16 @@ export default function QueryEditor({ onExecute, loading, metadata, query, onQue
         metadataRef.current = metadata;
     }, [metadata]);
 
+    useEffect(() => {
+        allMetadataRef.current = allMetadata;
+    }, [allMetadata]);
+
     const handleEditorChange = (val: string | undefined) => {
         onQueryChange(val || '');
     };
 
     const handleEditorDidMount = (editor: any, monaco: any) => {
-        // Add custom actions / shortcuts
+        // ... (existing actions)
         editor.addAction({
             id: 'execute-query',
             label: 'Execute SQL',
@@ -106,55 +112,61 @@ export default function QueryEditor({ onExecute, loading, metadata, query, onQue
             provideCompletionItems: (model: any, position: any) => {
                 const suggestions: any[] = [];
                 const currentMetadata = metadataRef.current;
+                const allMetas = allMetadataRef.current || {};
 
-                if (currentMetadata) {
-                    // Add Databases
-                    if (currentMetadata.databases) {
-                        currentMetadata.databases.forEach((db: any) => {
-                            suggestions.push({
-                                label: db.name,
-                                kind: monaco.languages.CompletionItemKind.Module,
-                                insertText: `[${db.name}]`,
-                                detail: 'Database'
-                            });
-                        });
-                    }
+                // Use all available metadata for cross-database completions
+                Object.keys(allMetas).forEach(dbName => {
+                    const meta = allMetas[dbName];
+                    if (!meta) return;
 
                     // Add Tables
-                    if (currentMetadata.tables) {
-                        currentMetadata.tables.forEach((t: any) => {
+                    if (meta.tables) {
+                        meta.tables.forEach((t: any) => {
                             suggestions.push({
                                 label: t.name,
                                 kind: monaco.languages.CompletionItemKind.Field,
                                 insertText: t.name,
-                                detail: `Table (${t.schema})`
+                                detail: `Table (${t.schema}) @ ${dbName}`,
+                                documentation: `Fully qualified: [${dbName}].[${t.schema}].[${t.name}]`
                             });
                         });
                     }
 
                     // Add Views
-                    if (currentMetadata.views) {
-                        currentMetadata.views.forEach((v: any) => {
+                    if (meta.views) {
+                        meta.views.forEach((v: any) => {
                             suggestions.push({
                                 label: v.name,
                                 kind: monaco.languages.CompletionItemKind.Interface,
                                 insertText: v.name,
-                                detail: `View (${v.schema})`
+                                detail: `View (${v.schema}) @ ${dbName}`
                             });
                         });
                     }
 
                     // Add Procedures
-                    if (currentMetadata.procedures) {
-                        currentMetadata.procedures.forEach((p: any) => {
+                    if (meta.procedures) {
+                        meta.procedures.forEach((p: any) => {
                             suggestions.push({
                                 label: p.name,
                                 kind: monaco.languages.CompletionItemKind.Function,
                                 insertText: p.name,
-                                detail: `Stored Procedure (${p.schema})`
+                                detail: `Stored Procedure (${p.schema}) @ ${dbName}`
                             });
                         });
                     }
+                });
+
+                // Add Databases from current metadata if not already covered
+                if (currentMetadata && currentMetadata.databases) {
+                    currentMetadata.databases.forEach((db: any) => {
+                        suggestions.push({
+                            label: db.name,
+                            kind: monaco.languages.CompletionItemKind.Module,
+                            insertText: `[${db.name}]`,
+                            detail: 'Database'
+                        });
+                    });
                 }
 
                 // Add keywords

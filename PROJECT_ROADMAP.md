@@ -23,9 +23,9 @@ This document tracks the development progress of **Data Forge**. It serves as a 
 - [x] **Schema DDL Generator**
     - [x] "View Create Script" for Tables
     - [x] "View Create Script" for Views/Procedures
-- [ ] **Import Wizard**
+- [x] **Import Wizard**
     - [x] Import from CSV/JSON to existing tables
-    - [ ] Dynamic Column Metadata fetching (Fetch real table columns for mapping)
+    - [x] Dynamic Column Metadata fetching (Fetch real table columns for mapping)
 
 ## 2. ⌨️ SQL Editor Enhancement (Developer Productivity)
 *Goal: Provide a VS-Code-like experience for database administration.*
@@ -81,11 +81,11 @@ This document tracks the development progress of **Data Forge**. It serves as a 
     - [x] **Cmd+K Toolbar**: Quick prompt overlay inside SQL Editor
     - [x] **Schema-Aware Context**: Automatically inject table/column metadata into prompts
     - [x] Multi-dialect SQL translation (Postgres -> MSSQL etc.) (Supported via AI System Prompts)
-- [ ] **SQL Fixer & Performance Optimizer**
+- [x] **SQL Fixer & Performance Optimizer**
     - [x] "Explain with AI": Human-readable analysis of slow execution plans
     - [x] Automatic syntax error correction suggestions
     - [x] Index optimization recommendations (Integrated in AI Analysis)
-    - [ ] Stand-alone Index Optimization engine (Dedicated performance advisor)
+    - [x] Stand-alone Index Optimization engine (Dedicated performance advisor)
 
 ## 5. 🏗 Advanced Enterprise Features
 *Goal: Tools for heavy-duty database management.*
@@ -117,7 +117,7 @@ This document tracks the development progress of **Data Forge**. It serves as a 
     - [x] Visual Logic builder (Structured Parameter & Body editor implemented)
 - [x] **Global Designer Enhancements**
     - [x] Multi-database selector for all designers (Implemented for Table, View, Proc Designers & Import Wizard)
-    - [ ] Cross-database schema intelligence (Table completion across selected DBs)
+    - [x] Cross-database schema intelligence (Table completion across selected DBs)
 
 ---
 
