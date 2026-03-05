@@ -5,7 +5,7 @@ import ConnectionForm from '@/components/ConnectionForm';
 import Sidebar from '@/components/Sidebar';
 import QueryEditor from '@/components/QueryEditor';
 import DataTable from '@/components/DataTable';
-import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link, Maximize2, Github, PlusCircle, Layers, Zap, RotateCcw, Share2 } from 'lucide-react';
+import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link, Maximize2, Github, PlusCircle, Layers, Zap, RotateCcw, Share2, Sparkles, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiRequest } from '@/lib/api';
 import TableDesigner from '@/components/TableDesigner';
@@ -59,6 +59,7 @@ interface Tab {
   showFilter: boolean;
   executionPlan?: any[];
   showPlan?: boolean;
+  error?: string;
 }
 
 export default function Home() {
@@ -203,11 +204,8 @@ export default function Home() {
     const targetTabId = options.tabId || activeTabId;
     if (!targetTabId) return;
 
-    // Search current state for defaults, but don't bail if not found.
-    // The tab might have been just added to the state queue.
     const currentTab = tabs.find(t => t.id === targetTabId);
-
-    if (!options.silent) updateTab(targetTabId, { loading: true });
+    if (!options.silent) updateTab(targetTabId, { loading: true, error: undefined });
 
     const targetDb = options.db || currentTab?.database || config.database;
     const currentPageSize = options.pSize || currentTab?.pageSize || 100;
@@ -228,7 +226,6 @@ export default function Home() {
       });
 
       if (data.success) {
-        // Save to history
         saveToHistory({
           sql: query,
           database: targetDb,
@@ -254,28 +251,37 @@ export default function Home() {
           page: currentPage,
           pageSize: currentPageSize,
           sortColumn: currentSortCol,
-          sortDir: currentSortDir
+          sortDir: currentSortDir,
+          error: undefined
         });
       } else {
-        // Save failed query to history
         saveToHistory({
           sql: query,
           database: targetDb,
           success: false,
           executionTime: Date.now() - startTime
         });
-        alert(data.message);
+        updateTab(targetTabId, {
+          error: data.message,
+          queryResult: { data: [], columns: [], totalRows: 0 },
+          resultSets: undefined,
+          executionPlan: undefined
+        });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      // Save error to history
       saveToHistory({
         sql: query,
         database: targetDb,
         success: false,
         executionTime: Date.now() - startTime
       });
-      if (!options.silent) alert('Failed to execute query');
+      if (!options.silent) {
+        updateTab(targetTabId, {
+          error: err.message || 'Failed to execute query',
+          queryResult: { data: [], columns: [], totalRows: 0 }
+        });
+      }
     } finally {
       if (!options.silent) updateTab(targetTabId, { loading: false });
     }
@@ -460,7 +466,7 @@ export default function Home() {
     }
   }, [activeTab, addQueryTab, executeQuery, updateTab]);
 
-  const addDesignerTab = (type: 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'server-monitor' | 'user-manager' | 'schema-compare') => {
+  const addDesignerTab = (type: Tab['type']) => {
     const id = `${type}-${Date.now()}`;
     const dialect = config.dbType || 'mssql';
     let title = 'New Table';
@@ -838,7 +844,64 @@ export default function Home() {
                       </div>
                     )}
 
-                    {activeTab.showPlan && activeTab.executionPlan ? (
+                    {activeTab.error ? (
+                      <div className="flex-1 flex flex-col items-center justify-center p-8 animate-in fade-in zoom-in-95 duration-300">
+                        <div className="max-w-2xl w-full bg-red-500/5 border border-red-500/20 rounded-3xl p-8 shadow-2xl shadow-red-500/5 transition-all hover:bg-red-500/10 group">
+                          <div className="flex items-center gap-4 mb-6">
+                            <div className="p-4 bg-red-500/10 rounded-2xl text-red-500 group-hover:scale-110 transition-transform">
+                              <AlertCircle className="w-8 h-8" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-red-500">Execution Error</h3>
+                              <p className="text-[10px] text-red-400/60 font-bold uppercase tracking-widest mt-1">Syntax or Runtime Exception</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-black/20 border border-red-500/10 rounded-2xl p-6 font-mono text-sm text-red-400 leading-relaxed break-all mb-8">
+                            {activeTab.error}
+                          </div>
+
+                          <div className="flex items-center gap-4">
+                            <button
+                              onClick={async () => {
+                                const aiConfig = localStorage.getItem('ai_config');
+                                if (!aiConfig) {
+                                  alert('Please configure AI in settings first.');
+                                  return;
+                                }
+                                updateTab(activeTab.id, { loading: true });
+                                try {
+                                  const res = await apiRequest('/api/ai/generate', 'POST', {
+                                    prompt: `Fix this SQL error. ERROR: ${activeTab.error}\nQUERY: ${activeTab.sqlQuery}`,
+                                    schema: metadata,
+                                    config: JSON.parse(aiConfig),
+                                    dbType: config.dbType
+                                  });
+                                  if (res.success && res.sql) {
+                                    updateTab(activeTab.id, { sqlQuery: res.sql, error: undefined });
+                                  } else {
+                                    alert(res.message || 'AI could not fix this error.');
+                                  }
+                                } catch (err: any) {
+                                  alert(err.message || 'Error communicating with AI.');
+                                } finally {
+                                  updateTab(activeTab.id, { loading: false });
+                                }
+                              }}
+                              className="flex-1 flex items-center justify-center gap-3 py-4 bg-purple-500 hover:bg-purple-600 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-purple-500/20 active:scale-[0.98]"
+                            >
+                              <Sparkles className="w-4 h-4" /> Fix SQL with AI Assistant
+                            </button>
+                            <button
+                              onClick={() => reloadData()}
+                              className="px-6 py-4 bg-muted hover:bg-muted/80 text-muted-foreground text-[11px] font-black uppercase tracking-widest rounded-2xl transition-all"
+                            >
+                              Retry
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : activeTab.showPlan && activeTab.executionPlan ? (
                       <ExecutionPlan data={activeTab.executionPlan} dialect={config.dbType || 'mssql'} />
                     ) : (
                       <DataTable

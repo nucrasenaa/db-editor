@@ -81,9 +81,9 @@ This document tracks the development progress of **Data Forge**. It serves as a 
     - [x] **Schema-Aware Context**: Automatically inject table/column metadata into prompts
     - [x] Multi-dialect SQL translation (Postgres -> MSSQL etc.) (Supported via AI System Prompts)
 - [ ] **SQL Fixer & Performance Optimizer**
-    - [ ] "Explain with AI": Human-readable analysis of slow execution plans
-    - [ ] Automatic syntax error correction suggestions
-    - [ ] Index optimization recommendations based on JOIN patterns
+    - [x] "Explain with AI": Human-readable analysis of slow execution plans
+    - [x] Automatic syntax error correction suggestions
+    - [ ] Index optimization recommendations based on JOIN patterns (Integrated in AI Analysis)
 
 ## 5. 🏗 Advanced Enterprise Features
 *Goal: Tools for heavy-duty database management.*
