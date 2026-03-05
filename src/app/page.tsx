@@ -80,15 +80,24 @@ export default function Home() {
   const [metadata, setMetadata] = useState<any>(null);
   const [allMetadata, setAllMetadata] = useState<Record<string, any>>({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const autoFetchedTabs = React.useRef<Set<string>>(new Set());
 
-  // Load theme from localStorage and apply to root
+  // Restore theme from localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem('forge-theme') as 'dark' | 'light';
     if (savedTheme) {
       setTheme(savedTheme);
-      if (savedTheme === 'light') document.documentElement.classList.add('light');
+      // Theme class is also handled in a inline script in layout.tsx to prevent flicker, 
+      // but we ensure it matches the state here after hydration.
+      if (savedTheme === 'light') {
+        document.documentElement.classList.add('light');
+      } else {
+        document.documentElement.classList.remove('light');
+      }
+    } else {
+      // Default to light if nothing is in localStorage
+      document.documentElement.classList.add('light');
     }
   }, []);
 
