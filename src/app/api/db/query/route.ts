@@ -82,11 +82,32 @@ export async function POST(req: NextRequest) {
                 }
 
                 if (dialect === 'mssql') {
-                    const sortClause = orderBy ? `ORDER BY ${orderBy} ${orderDir}` : 'ORDER BY (SELECT NULL)';
-                    finalQuery = `${baseQuery} ${sortClause} OFFSET ${offset} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
+                    // Check if query already has an ORDER BY clause at the end
+                    // This avoids double ORDER BY which is invalid in MSSQL
+                    const hasOrderBy = /\s+ORDER\s+BY\s+[\w\.\[\]\d\s,]+$/i.test(baseQuery);
+
+                    if (orderBy) {
+                        // If we have explicit sort params, strip any existing ORDER BY to avoid duplication
+                        let cleanedQuery = baseQuery;
+                        if (hasOrderBy) {
+                            cleanedQuery = baseQuery.replace(/\s+ORDER\s+BY\s+[\w\.\[\]\d\s,]+$/i, '').trim();
+                        }
+                        finalQuery = `${cleanedQuery} ORDER BY ${orderBy} ${orderDir} OFFSET ${offset} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
+                    } else if (hasOrderBy) {
+                        // Use existing ORDER BY if present
+                        finalQuery = `${baseQuery} OFFSET ${offset} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
+                    } else {
+                        // No ORDER BY found, add a dummy one required for OFFSET/FETCH in MSSQL
+                        finalQuery = `${baseQuery} ORDER BY (SELECT NULL) OFFSET ${offset} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
+                    }
                 } else {
+                    const hasOrderBy = /\s+ORDER\s+BY\s+[\w\.\[\]\d\s,]+$/i.test(baseQuery);
+                    let cleanedQuery = baseQuery;
+                    if (orderBy && hasOrderBy) {
+                        cleanedQuery = baseQuery.replace(/\s+ORDER\s+BY\s+[\w\.\[\]\d\s,]+$/i, '').trim();
+                    }
                     const sortClause = orderBy ? `ORDER BY ${orderBy} ${orderDir}` : '';
-                    finalQuery = `${baseQuery} ${sortClause} LIMIT ${pageSize} OFFSET ${offset}`;
+                    finalQuery = `${cleanedQuery} ${sortClause} LIMIT ${pageSize} OFFSET ${offset}`;
                 }
             }
 
