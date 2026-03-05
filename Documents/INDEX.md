@@ -1,6 +1,6 @@
 # 📔 Data Forge Documentation Hub
 
-Welcome to the official documentation for **Data Forge v1.1.0**. This hub serves as the primary resource for both users and developers to understand, utilize, and extend the application.
+Welcome to the official documentation for **Data Forge v1.1.1**. This hub serves as the primary resource for both users and developers to understand, utilize, and extend the application.
 
 ## 🚀 Getting Started
 - **[User Guide](./USER_GUIDE.md)**: Learn how to connect to databases, browse data, and use the smart tools.

@@ -1,41 +1,33 @@
-# 🚀 Data Forge v1.0.0 Release Notes
+# 🚀 Data Forge Release Notes
 
-We are excited to announce the official **v1.0.0** release of **Data Forge**, a high-performance, AI-powered database management studio designed for modern developers and DBAs.
+## [v1.1.1] - 2026-03-05
+### High-Performance Styling & Documentation
+- **Premium Theme System**: Introduced a fully integrated **Light Mode** and **Dark Mode** toggle.
+- **Auto-Theme Detection**: Persistent theme selection via `localStorage` with flicker-free loading scripts.
+- **Theme Parity**: Monaco SQL Editor now deep-links with the application theme (vs-dark/light).
+- **Default Theme Change**: **Light Mode** is now the default theme for a cleaner initial experience.
+- **Documentation Center**: Launched the built-in `/documents` portal with comprehensive guides for users and developers.
+- **Version Tracking**: Unified versioning across the UI, Documentation, and Package metadata.
 
-This release transforms Data Forge from a query editor into a comprehensive database engineering suite.
+## [v1.1.0] - 2026-03-05
+### Smart Updates & Dialect Parity
+- **Cross-Dialect Update Logic**: Refined `UPDATE` query generation for MSSQL, MySQL, and PostgreSQL.
+- **Affected Rows Precision**: Improved `rowsAffected` and `rowCount` detection logic across different database drivers.
+- **Smart Targeting**: Inline editing now prioritizes `id`, `uuid`, or `pk` columns for safer `WHERE` clause generation.
+- **Redundant Naming Fix**: Resolved the "db.db.table" naming conflict in MariaDB update statements.
+- **MSSQL Crash Fix**: Resolved "Cannot read properties of undefined (reading 'rowsAffected')" for SQL Server.
+- **Defensive Error Handling**: Non-destructive alerts when attempted updates on views or query results with non-identifiable tables.
 
 ---
 
-## 🔥 Key Highlight: The Designer Suite
-We've introduced a full suite of visual designers that allow you to build complex database objects without writing manual SQL.
-
-- **Table Designer**: Create and modify tables with a visual schema editor.
-- **View Designer**: A visual builder for SQL Views with column mapping and aliasing.
-- **Procedure & Function Designer**: A dual-interface designer for building stored procedures and functions with logic templates.
-- **Visual Query Builder**: Build complex multi-table queries via a drag-and-drop interface.
-- **ER Architect**: Generate and view ER diagrams to understand database relationships.
-
-## 🧠 AI Forge & Smart Features
-- **Cross-Database Intellisense**: Intelligent code completion that works across ALL explored databases simultaneously.
-- **AI Performance Advisor**: A dedicated engine that analyzes execution plans and provides one-click index recommendations.
-- **AI SQL Fixer**: Automatically detects syntax errors and suggests corrections.
-- **Query Explain**: Get human-readable explanations of complex SQL queries, views, and execution plans.
-
-## 🛠 Enterprise Utilities
-- **Global Database Selector**: Switch target databases across all designers and query windows instantly.
-- **Smart Import Wizard**: Move data from CSV/JSON to existing tables with dynamic column metadata fetching.
-- **Schema Comparison**: Diff two databases to identify schema drift.
-- **Server Health Monitor**: Real-time stats for CPU, memory, and active sessions.
-
-## 💎 Design & UX
-- **Obsidian-Glass Aesthetic**: A premium, high-performance dark theme with frosted glass effects.
-- **Mobile Responsive**: Fully optimized for mobile and tablet use, including condensed headers and touch-friendly controls.
-- **Tabbed Workspace**: Manage multiple queries, designers, and monitors in a single unified view.
-
-## 📦 Technical Improvements (v1.0.0 Special)
-- **Native IPC Core**: Migrated all critical AI and DB features to Electron IPC handlers for 100% reliability in production desktop builds.
-- **Multi-Dialect Support**: Full parity for MSSQL, PostgreSQL, and MySQL/MariaDB.
-- **Performance**: Optimized metadata loading and tab management for large-scale enterprise servers.
+## [v1.0.0] - 2026-03-05
+### The Official Launch
+- **Official Product Release**
+- **The Designer Suite**: Introduced Table, View, Procedure, and Visual Query designers.
+- **AI Forge**: AI-powered code completion, performance advisor, and SQL fixer.
+- **Enterprise Utilities**: Schema comparison, Import Wizard, and Server Monitor.
+- **Obsidian-Glass Aesthetic**: Premium dark theme (v1.0.0 default).
+- **Native IPC Core**: Production-ready stability via Electron.
 
 ---
 *Built with ❤️ for Database Engineers.*

@@ -35,7 +35,7 @@ export default function DocsLayout({
                     </div>
                 </div>
                 <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
-                    <span>Version 1.1.0</span>
+                    <span>Version 1.1.1</span>
                     <div className="w-1 h-1 rounded-full bg-border" />
                     <span>Three Man Dev</span>
                 </div>
@@ -78,6 +78,6 @@ export default function DocsLayout({
                     </div>
                 </main>
             </div>
-        </div>
+        </div >
     );
 }
