@@ -52,7 +52,10 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
         setTestSuccess(false);
 
         try {
-            const data = await apiRequest('/api/db/test', 'POST', connMode === 'url' ? { connectionString: config.connectionString, dbType: config.dbType } : config);
+            const requestData = connMode === 'url'
+                ? { connectionString: config.connectionString, dbType: config.dbType, options: config.options }
+                : config;
+            const data = await apiRequest('/api/db/test', 'POST', requestData);
             if (data.success) {
                 setTestSuccess(true);
                 setTimeout(() => setTestSuccess(false), 3000);
@@ -73,7 +76,10 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
         setTestSuccess(false);
 
         try {
-            const data = await apiRequest('/api/db/test', 'POST', connMode === 'url' ? { connectionString: config.connectionString, dbType: config.dbType } : config);
+            const requestData = connMode === 'url'
+                ? { connectionString: config.connectionString, dbType: config.dbType, options: config.options }
+                : config;
+            const data = await apiRequest('/api/db/test', 'POST', requestData);
             if (data.success) {
                 onConnect(connMode === 'url' ? { ...config, server: config.connectionString.split('@')[1]?.split('/')[0] || 'MSSQL URL' } : config);
             } else {
@@ -255,6 +261,39 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
                                         value={config.database}
                                         onChange={(e) => setConfig({ ...config, database: e.target.value })}
                                     />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 px-1 py-1">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="encrypt"
+                                            className="w-4 h-4 rounded border-border bg-muted/50 text-accent focus:ring-accent"
+                                            checked={config.options.encrypt}
+                                            onChange={(e) => setConfig({
+                                                ...config,
+                                                options: { ...config.options, encrypt: e.target.checked }
+                                            })}
+                                        />
+                                        <label htmlFor="encrypt" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider cursor-pointer select-none">
+                                            Enable SSL/TLS (Encrypt)
+                                        </label>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="trustCert"
+                                            className="w-4 h-4 rounded border-border bg-muted/50 text-accent focus:ring-accent"
+                                            checked={config.options.trustServerCertificate}
+                                            onChange={(e) => setConfig({
+                                                ...config,
+                                                options: { ...config.options, trustServerCertificate: e.target.checked }
+                                            })}
+                                        />
+                                        <label htmlFor="trustCert" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider cursor-pointer select-none">
+                                            Trust Server Certificate
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 px-1">

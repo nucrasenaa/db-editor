@@ -22,17 +22,30 @@ export async function getDbProxy(config: any): Promise<DbProxy> {
   dbType = dbType || 'mssql';
 
   if (dbType === 'mysql' || dbType === 'mariadb') {
-    let connConfig = config.connectionString
-      ? (config.connectionString.includes('multipleStatements=')
-        ? config.connectionString
-        : config.connectionString + (config.connectionString.includes('?') ? '&' : '?') + 'multipleStatements=true')
+    // Parse host:port if provided in the server field
+    let actualHost = config.server || 'localhost';
+    let actualPort = config.port || 3306;
+    if (typeof actualHost === 'string' && actualHost.includes(':')) {
+      const parts = actualHost.split(':');
+      actualHost = parts[0];
+      actualPort = parseInt(parts[1]) || actualPort;
+    }
+
+    const sslConfig = config.options?.encrypt ? {
+      rejectUnauthorized: false,
+      minVersion: 'TLSv1.2'
+    } : undefined;
+
+    let connConfig: any = config.connectionString
+      ? { uri: config.connectionString, ssl: sslConfig, multipleStatements: true }
       : {
-        host: config.server,
-        port: config.port || 3306,
+        host: actualHost,
+        port: actualPort,
         user: config.user,
         password: config.password,
         database: config.database,
-        multipleStatements: true
+        multipleStatements: true,
+        ssl: sslConfig
       };
 
     const connection = await mysql.createConnection(connConfig);
