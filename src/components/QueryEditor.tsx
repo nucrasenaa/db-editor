@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, Bookmark, Network } from 'lucide-react';
+import { Play, RotateCcw, Bookmark, Network, Sparkles } from 'lucide-react';
 import { saveBookmark } from '@/lib/history';
 import { Editor } from '@monaco-editor/react';
+import AICopilot from './AICopilot';
 
 interface QueryEditorProps {
     onExecute: (query: string) => void;
@@ -15,7 +16,25 @@ interface QueryEditorProps {
 }
 
 export default function QueryEditor({ onExecute, loading, metadata, query, onQueryChange, dbType }: QueryEditorProps) {
+    const [showCopilot, setShowCopilot] = useState(false);
     const metadataRef = useRef(metadata);
+    const queryRef = useRef(query);
+
+    // Sync query to ref for auto-execute listener
+    useEffect(() => {
+        queryRef.current = query;
+    }, [query]);
+
+    // Handle auto-execute from AI
+    useEffect(() => {
+        const handleAutoExecute = () => {
+            if (queryRef.current.trim()) {
+                onExecute(queryRef.current);
+            }
+        };
+        window.addEventListener('execute-generated-sql', handleAutoExecute);
+        return () => window.removeEventListener('execute-generated-sql', handleAutoExecute);
+    }, [onExecute]);
 
     // Sync metadata to ref so the provider always sees the latest version
     useEffect(() => {
@@ -70,6 +89,15 @@ export default function QueryEditor({ onExecute, loading, metadata, query, onQue
             run: () => {
                 const val = editor.getValue();
                 if (val.trim()) onExecute(`EXPLAIN_PLAN:${val}`);
+            }
+        });
+
+        editor.addAction({
+            id: 'open-copilot',
+            label: 'AI Copilot',
+            keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK],
+            run: () => {
+                setShowCopilot(true);
             }
         });
 
@@ -182,6 +210,13 @@ export default function QueryEditor({ onExecute, loading, metadata, query, onQue
                     >
                         <RotateCcw className="w-4 h-4" />
                     </button>
+                    <button
+                        onClick={() => setShowCopilot(true)}
+                        className="p-1.5 hover:bg-purple-500/10 rounded-md transition-colors text-purple-400"
+                        title="AI Copilot (Cmd+K)"
+                    >
+                        <Sparkles className="w-4 h-4" />
+                    </button>
                     <div className="h-4 w-px bg-border mx-1" />
                     <button
                         onClick={() => {
@@ -223,6 +258,15 @@ export default function QueryEditor({ onExecute, loading, metadata, query, onQue
                         autoClosingBrackets: 'always',
                     }}
                 />
+
+                {showCopilot && (
+                    <AICopilot
+                        onClose={() => setShowCopilot(false)}
+                        onGenerated={(generated) => onQueryChange(generated)}
+                        metadata={metadata}
+                        config={{ dbType }}
+                    />
+                )}
             </div>
         </div>
     );

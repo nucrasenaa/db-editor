@@ -65,14 +65,25 @@ This document tracks the development progress of **Data Forge**. It serves as a 
     - [x] Ability to pop out a Query Tab into a new window
 
 ## 4. 🤖 AI Intelligence (Smart Assistance)
-*Goal: Leverage LLMs to speed up database tasks.*
+*Goal: Leverage LLMs to speed up database tasks with a focus on privacy and control.*
 
-- [ ] **Database Copilot (Chat to SQL)**
-    - [ ] AI input bar: "Show me all users from Bangkok who ordered in 2024"
-    - [ ] Context-aware generation (AI knows your table schema)
-- [ ] **SQL Fixer & Analyzer**
-    - [ ] "Fix this Error" button on SQL Syntax errors
-    - [ ] AI-driven index suggestions for slow queries
+- [x] **AI Engine & Provider Management**
+    - [x] Dynamic Provider Selection (OpenAI, Anthropic, Gemini, Z.ai)
+    - [x] **Private AI Support**: Ollama (Local LLM) integration for offline/private usage
+    - [x] Custom API Endpoints & Model parameters
+    - [x] Encrypted Secure API Key Storage (Integrated with Test Connection)
+- [x] **Smart Security & Execution Policy**
+    - [x] "Safety First" Mode: Always show SQL for approval
+    - [x] **Auto-Select Strategy**: Auto-run safe SELECT queries, block destructive ops
+    - [x] High-Impact Query Warnings (UPDATE, DELETE, DROP) with red-alert confirmation
+- [x] **Database Copilot (Chat to SQL)**
+    - [x] **Cmd+K Toolbar**: Quick prompt overlay inside SQL Editor
+    - [x] **Schema-Aware Context**: Automatically inject table/column metadata into prompts
+    - [x] Multi-dialect SQL translation (Postgres -> MSSQL etc.) (Supported via AI System Prompts)
+- [ ] **SQL Fixer & Performance Optimizer**
+    - [ ] "Explain with AI": Human-readable analysis of slow execution plans
+    - [ ] Automatic syntax error correction suggestions
+    - [ ] Index optimization recommendations based on JOIN patterns
 
 ## 5. 🏗 Advanced Enterprise Features
 *Goal: Tools for heavy-duty database management.*

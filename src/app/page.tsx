@@ -16,6 +16,7 @@ import ERDiagram from '@/components/ERDiagram';
 import ServerMonitor from '@/components/ServerMonitor';
 import UserManager from '@/components/UserManager';
 import SchemaCompare from '@/components/SchemaCompare';
+import AISettings from '@/components/AISettings';
 import { saveToHistory } from '@/lib/history';
 import { popoutTab } from '@/lib/popout';
 import { Activity, Users, GitCompare } from 'lucide-react';
@@ -42,7 +43,7 @@ interface ResultSet {
 
 interface Tab {
   id: string;
-  type: 'table' | 'query' | 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'er-diagram' | 'server-monitor' | 'user-manager' | 'schema-compare';
+  type: 'table' | 'query' | 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'er-diagram' | 'server-monitor' | 'user-manager' | 'schema-compare' | 'ai-settings';
   title: string;
   database: string;
   sqlQuery: string;
@@ -990,6 +991,8 @@ export default function Home() {
                 <UserManager config={config} onClose={() => closeTab(activeTab.id)} />
               ) : activeTab.type === 'schema-compare' ? (
                 <SchemaCompare config={config} onClose={() => closeTab(activeTab.id)} />
+              ) : activeTab.type === 'ai-settings' ? (
+                <AISettings onClose={() => closeTab(activeTab.id)} />
               ) : null}
             </>
           ) : (

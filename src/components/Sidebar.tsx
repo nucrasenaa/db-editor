@@ -24,7 +24,8 @@ import {
     Bookmark,
     Activity,
     Users,
-    GitCompare
+    GitCompare,
+    Sparkles
 } from 'lucide-react';
 import HistoryPanel from './HistoryPanel';
 import BookmarkPanel from './BookmarkPanel';
@@ -36,7 +37,7 @@ interface SidebarProps {
     onObjectSelect: (objectName: string, type: 'table' | 'view' | 'procedure' | 'synonym', database?: string) => void;
     onMetadataLoad?: (dbName: string, metadata: MetadataType) => void;
     selectedObject: string | null;
-    onAddClick: (type: 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder') => void;
+    onAddClick: (type: 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'er-diagram' | 'server-monitor' | 'user-manager' | 'schema-compare' | 'ai-settings') => void;
     onViewScript: (fullName: string, type: 'table' | 'view' | 'procedure', database: string) => void;
     onRunQuery: (sql: string) => void;
 }
@@ -359,7 +360,7 @@ export default function Sidebar({ config, onObjectSelect, onMetadataLoad, select
 
             {activeTab === 'explorer' && (
                 <>
-                    <div className="p-4 border-b border-border/50 space-y-4">
+                    <div className="p-4 border-b border-border/50 space-y-4 overflow-hidden shrink-0">
                         <div className="flex items-center justify-between">
                             <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                                 <Search className="w-3.5 h-3.5" />
@@ -397,8 +398,24 @@ export default function Sidebar({ config, onObjectSelect, onMetadataLoad, select
                         )}
                     </div>
 
+                    {/* AI Forge */}
+                    <div className="mx-3 mb-2 mt-auto pt-4 border-t border-border/30 space-y-3 shrink-0">
+                        <div className="flex items-center gap-2 px-2 text-[9px] font-black uppercase tracking-widest text-purple-500/60">
+                            <Sparkles className="w-2.5 h-2.5" /> AI Forge
+                        </div>
+                        <div className="grid grid-cols-1 gap-2">
+                            <button
+                                onClick={() => onAddClick('ai-settings' as any)}
+                                className="flex items-center justify-center gap-3 p-3 rounded-xl bg-purple-500/5 hover:bg-purple-600/10 border border-purple-500/10 transition-all group"
+                            >
+                                <Sparkles className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+                                <span className="text-[8px] font-black uppercase tracking-widest text-purple-400/70">AI Engine & Provider Management</span>
+                            </button>
+                        </div>
+                    </div>
+
                     {/* Enterprise Forge */}
-                    <div className="mx-3 mb-4 mt-auto pt-4 border-t border-border/30 space-y-3">
+                    <div className="mx-3 mb-4 mt-2 pt-4 border-t border-border/30 space-y-3 shrink-0">
                         <div className="flex items-center gap-2 px-2 text-[9px] font-black uppercase tracking-widest text-emerald-500/60">
                             <Zap className="w-2.5 h-2.5" /> Enterprise Forge
                         </div>
@@ -433,7 +450,7 @@ export default function Sidebar({ config, onObjectSelect, onMetadataLoad, select
                             </button>
                             <button
                                 onClick={() => onAddClick('query-builder')}
-                                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-purple-500/5 hover:bg-purple-500/10 border border-purple-500/10 transition-all group"
+                                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-purple-500/5 hover:bg-purple-600/10 border border-purple-500/10 transition-all group"
                             >
                                 <LayoutDashboard className="w-3.5 h-3.5 text-purple-400 group-hover:scale-110 transition-transform" />
                                 <span className="text-[8px] font-black uppercase tracking-tighter text-purple-400/70">Builder</span>
