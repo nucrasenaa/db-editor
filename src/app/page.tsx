@@ -7,6 +7,7 @@ import QueryEditor from '@/components/QueryEditor';
 import DataTable from '@/components/DataTable';
 import DataVisualization from '@/components/DataVisualization';
 import MiniDashboards from '@/components/MiniDashboards';
+import MockDataGenerator from '@/components/MockDataGenerator';
 import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link as LinkIcon, Maximize2, Github, PlusCircle, Layers, Zap, RotateCcw, Share2, Sparkles, AlertCircle, Menu, Sun, Moon, Book, PieChart, Network } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -49,7 +50,7 @@ interface ResultSet {
 
 interface Tab {
   id: string;
-  type: 'table' | 'query' | 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'er-diagram' | 'server-monitor' | 'user-manager' | 'schema-compare' | 'ai-settings' | 'performance-advisor' | 'mini-dashboards';
+  type: 'table' | 'query' | 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'er-diagram' | 'server-monitor' | 'user-manager' | 'schema-compare' | 'ai-settings' | 'performance-advisor' | 'mini-dashboards' | 'mock-data';
   title: string;
   database: string;
   sqlQuery: string;
@@ -613,6 +614,8 @@ export default function Home() {
       title = 'Performance Advisor';
     } else if (type === 'mini-dashboards') {
       title = 'Mini Dashboards';
+    } else if (type === 'mock-data') {
+      title = 'Mock Data Gr.';
     }
 
     const newTab: Tab = {
@@ -1394,6 +1397,16 @@ export default function Home() {
                 <PerformanceAdvisor config={config} onClose={() => closeTab(activeTab.id)} />
               ) : activeTab.type === 'mini-dashboards' ? (
                 <MiniDashboards onClose={() => closeTab(activeTab.id)} />
+              ) : activeTab.type === 'mock-data' ? (
+                <MockDataGenerator
+                  dbType={config.dbType}
+                  database={activeTab.database}
+                  databases={metadata?.databases || []}
+                  metadata={metadata || {}}
+                  config={config}
+                  onExecute={(sql) => executeQuery(sql, { tabId: activeTab.id, silent: false })}
+                  onClose={() => closeTab(activeTab.id)}
+                />
               ) : null
               }
             </>

@@ -3,7 +3,19 @@ import { getDbProxy } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
     try {
-        const { config, query, page = 1, pageSize = 100, orderBy, orderDir = 'ASC', includeCount = false } = await req.json();
+        const body = await req.json();
+        // Extract connection config from the root of the body, allowing for either a nested 'config' object
+        // or top-level properties (which MockDataGenerator uses)
+        const config = body.config || {
+            dbType: body.dbType,
+            server: body.server || body.host,
+            database: body.database,
+            user: body.user,
+            password: body.password,
+            port: body.port,
+            options: body.options
+        };
+        const { query, page = 1, pageSize = 100, orderBy, orderDir = 'ASC', includeCount = false } = body;
         const dialect = config.dbType || 'mssql';
 
         if (!query) {

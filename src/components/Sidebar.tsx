@@ -27,7 +27,8 @@ import {
     Users,
     GitCompare,
     Sparkles,
-    Book
+    Book,
+    TestTubes
 } from 'lucide-react';
 import HistoryPanel from './HistoryPanel';
 import BookmarkPanel from './BookmarkPanel';
@@ -40,7 +41,7 @@ interface SidebarProps {
     onObjectSelect: (objectName: string, type: 'table' | 'view' | 'procedure' | 'synonym', database?: string) => void;
     onMetadataLoad?: (dbName: string, metadata: MetadataType) => void;
     selectedObject: string | null;
-    onAddClick: (type: 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'er-diagram' | 'server-monitor' | 'user-manager' | 'schema-compare' | 'ai-settings' | 'performance-advisor' | 'mini-dashboards') => void;
+    onAddClick: (type: 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'er-diagram' | 'server-monitor' | 'user-manager' | 'schema-compare' | 'ai-settings' | 'performance-advisor' | 'mini-dashboards' | 'mock-data') => void;
     onViewScript: (fullName: string, type: 'table' | 'view' | 'procedure', database: string) => void;
     onRunQuery: (sql: string) => void;
     className?: string;
@@ -486,6 +487,14 @@ export default function Sidebar({
                                 >
                                     <LayoutDashboard className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
                                     <span className="text-[8px] font-bold uppercase tracking-tighter text-orange-400/70">Dashboards</span>
+                                </button>
+                                <button
+                                    onClick={() => onAddClick('mock-data')}
+                                    className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-pink-500/5 hover:bg-pink-600/10 border border-pink-500/10 transition-all group"
+                                    title="Mock Data Generator"
+                                >
+                                    <TestTubes className="w-4 h-4 text-pink-400 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[8px] font-bold uppercase tracking-tighter text-pink-400/70">Mock Data</span>
                                 </button>
                             </div>
                         )}
