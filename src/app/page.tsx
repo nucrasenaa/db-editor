@@ -5,7 +5,9 @@ import ConnectionForm from '@/components/ConnectionForm';
 import Sidebar from '@/components/Sidebar';
 import QueryEditor from '@/components/QueryEditor';
 import DataTable from '@/components/DataTable';
-import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link as LinkIcon, Maximize2, Github, PlusCircle, Layers, Zap, RotateCcw, Share2, Sparkles, AlertCircle, Menu, Sun, Moon, Book } from 'lucide-react';
+import DataVisualization from '@/components/DataVisualization';
+import MiniDashboards from '@/components/MiniDashboards';
+import { Database, LogOut, Table as TableIcon, LayoutDashboard, Terminal, Search, Filter, X, Plus, Server, Trash2, Globe, User, Link as LinkIcon, Maximize2, Github, PlusCircle, Layers, Zap, RotateCcw, Share2, Sparkles, AlertCircle, Menu, Sun, Moon, Book, PieChart, Network } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { apiRequest } from '@/lib/api';
@@ -47,7 +49,7 @@ interface ResultSet {
 
 interface Tab {
   id: string;
-  type: 'table' | 'query' | 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'er-diagram' | 'server-monitor' | 'user-manager' | 'schema-compare' | 'ai-settings' | 'performance-advisor';
+  type: 'table' | 'query' | 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'er-diagram' | 'server-monitor' | 'user-manager' | 'schema-compare' | 'ai-settings' | 'performance-advisor' | 'mini-dashboards';
   title: string;
   database: string;
   sqlQuery: string;
@@ -64,6 +66,7 @@ interface Tab {
   tableName?: string;
   executionPlan?: any[];
   showPlan?: boolean;
+  showChart?: boolean;
   error?: string;
   aiThinking?: boolean;
   aiStatus?: string;
@@ -608,6 +611,8 @@ export default function Home() {
       title = 'Schema Diff';
     } else if (type === 'performance-advisor') {
       title = 'Performance Advisor';
+    } else if (type === 'mini-dashboards') {
+      title = 'Mini Dashboards';
     }
 
     const newTab: Tab = {
@@ -631,6 +636,35 @@ export default function Home() {
   const reloadData = () => {
     if (activeTab) {
       executeQuery(activeTab.sqlQuery);
+    }
+  };
+
+  const handleSaveToDashboard = (config: { chartType: 'bar' | 'line' | 'pie', xAxisCol: string, yAxisCol: string }) => {
+    if (!activeTab) return;
+
+    try {
+      const saved = localStorage.getItem('forge_dashboards');
+      const items = saved ? JSON.parse(saved) : [];
+
+      const newItem = {
+        id: `chart-${Date.now()}`,
+        title: activeTab.type === 'query' ? 'Query Chart' : `${activeTab.title} Chart`,
+        sourceTabId: activeTab.id,
+        sourceTabName: activeTab.title || 'SQL Query',
+        chartType: config.chartType,
+        xAxisCol: config.xAxisCol,
+        yAxisCol: config.yAxisCol,
+        data: activeTab.queryResult.data.slice(0, 50),
+        columns: activeTab.queryResult.columns
+      };
+
+      localStorage.setItem('forge_dashboards', JSON.stringify([...items, newItem]));
+
+      // Optionally show a success toast here if you have one, instead of raw alert
+      alert('Chart saved to Mini Dashboards!');
+    } catch (e) {
+      console.error("Failed to save to dashboard", e);
+      alert('Failed to save to dashboard.');
     }
   };
 
@@ -1019,26 +1053,37 @@ export default function Home() {
                       </div>
                     )}
 
-                    {activeTab.executionPlan && activeTab.executionPlan.length > 0 && (
-                      <div className="absolute top-4 right-8 z-10 flex gap-1 bg-card/80 backdrop-blur-md border border-border rounded-xl p-1 shadow-2xl shadow-black/20 animate-in fade-in zoom-in duration-300">
+                    {(activeTab.queryResult?.data?.length > 0 || (activeTab.executionPlan && activeTab.executionPlan.length > 0)) && (
+                      <div className="absolute top-4 right-8 z-10 flex bg-card/80 backdrop-blur-md border border-border rounded-xl p-1 shadow-2xl shadow-black/20 animate-in fade-in zoom-in duration-300">
                         <button
-                          onClick={() => updateTab(activeTab.id, { showPlan: false })}
+                          onClick={() => updateTab(activeTab.id, { showPlan: false, showChart: false })}
                           className={cn(
-                            "px-4 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] rounded-lg transition-all",
-                            !activeTab.showPlan ? "bg-accent text-accent-foreground shadow-lg shadow-accent/20" : "hover:bg-muted text-muted-foreground"
+                            "flex items-center gap-2 px-4 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] rounded-lg transition-all",
+                            !activeTab.showPlan && !activeTab.showChart ? "bg-accent/10 text-accent shadow-sm" : "hover:bg-muted text-muted-foreground"
                           )}
                         >
-                          Result Data
+                          <TableIcon className="w-3.5 h-3.5" /> Table
                         </button>
                         <button
-                          onClick={() => updateTab(activeTab.id, { showPlan: true })}
+                          onClick={() => updateTab(activeTab.id, { showPlan: false, showChart: true })}
                           className={cn(
-                            "px-4 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] rounded-lg transition-all",
-                            activeTab.showPlan ? "bg-accent text-accent-foreground shadow-lg shadow-accent/20" : "hover:bg-muted text-muted-foreground"
+                            "flex items-center gap-2 px-4 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] rounded-lg transition-all",
+                            activeTab.showChart ? "bg-accent/10 text-accent shadow-sm" : "hover:bg-muted text-muted-foreground"
                           )}
                         >
-                          Execution Plan
+                          <PieChart className="w-3.5 h-3.5" /> Chart
                         </button>
+                        {activeTab.executionPlan && activeTab.executionPlan.length > 0 && (
+                          <button
+                            onClick={() => updateTab(activeTab.id, { showPlan: true, showChart: false })}
+                            className={cn(
+                              "flex items-center gap-2 px-4 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] rounded-lg transition-all",
+                              activeTab.showPlan ? "bg-accent/10 text-accent shadow-sm" : "hover:bg-muted text-muted-foreground"
+                            )}
+                          >
+                            <Network className="w-3.5 h-3.5" /> Plan
+                          </button>
+                        )}
                       </div>
                     )}
 
@@ -1154,6 +1199,12 @@ export default function Home() {
                       </div>
                     ) : activeTab.showPlan && activeTab.executionPlan ? (
                       <ExecutionPlan data={activeTab.executionPlan} dialect={config.dbType || 'mssql'} />
+                    ) : activeTab.showChart ? (
+                      <DataVisualization
+                        data={activeTab.queryResult.data}
+                        columns={activeTab.queryResult.columns}
+                        onSaveToDashboard={handleSaveToDashboard}
+                      />
                     ) : (
                       <DataTable
                         data={activeTab.queryResult.data}
@@ -1214,28 +1265,57 @@ export default function Home() {
                         )}
                       </div>
                     </div>
-                    <div className="hidden md:flex items-center gap-2">
+                    <div className="hidden md:flex items-center gap-4">
+                      <div className="flex bg-muted/30 p-1 rounded-lg border border-border/50">
+                        <button
+                          onClick={() => updateTab(activeTab.id, { showChart: false })}
+                          className={cn(
+                            "flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-md transition-all whitespace-nowrap",
+                            !activeTab.showChart ? "bg-accent/10 text-accent shadow-sm" : "text-muted-foreground hover:bg-muted"
+                          )}
+                        >
+                          <TableIcon className="w-3.5 h-3.5" /> Table
+                        </button>
+                        <button
+                          onClick={() => updateTab(activeTab.id, { showChart: true })}
+                          className={cn(
+                            "flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-md transition-all whitespace-nowrap",
+                            activeTab.showChart ? "bg-accent/10 text-accent shadow-sm" : "text-muted-foreground hover:bg-muted"
+                          )}
+                        >
+                          <PieChart className="w-3.5 h-3.5" /> Chart
+                        </button>
+                      </div>
+                      <div className="h-6 w-px bg-border/50" />
                       <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-tighter text-right">
                         Loaded {activeTab.queryResult.data.length} <br /> of {activeTab.queryResult.totalRows}
                       </span>
                     </div>
                   </div>
                   <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-                    <DataTable
-                      data={activeTab.queryResult.data}
-                      columns={activeTab.queryResult.columns}
-                      loading={activeTab.loading}
-                      page={activeTab.page}
-                      pageSize={activeTab.pageSize}
-                      totalRows={activeTab.queryResult.totalRows}
-                      onPageChange={handlePageChange}
-                      onPageSizeChange={handlePageSizeChange}
-                      onSort={handleSort}
-                      sortColumn={activeTab.sortColumn}
-                      sortDir={activeTab.sortDir}
-                      onUpdate={handleUpdate}
-                      allowEdit={true}
-                    />
+                    {activeTab.showChart ? (
+                      <DataVisualization
+                        data={activeTab.queryResult.data}
+                        columns={activeTab.queryResult.columns}
+                        onSaveToDashboard={handleSaveToDashboard}
+                      />
+                    ) : (
+                      <DataTable
+                        data={activeTab.queryResult.data}
+                        columns={activeTab.queryResult.columns}
+                        loading={activeTab.loading}
+                        page={activeTab.page}
+                        pageSize={activeTab.pageSize}
+                        totalRows={activeTab.queryResult.totalRows}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
+                        onSort={handleSort}
+                        sortColumn={activeTab.sortColumn}
+                        sortDir={activeTab.sortDir}
+                        onUpdate={handleUpdate}
+                        allowEdit={true}
+                      />
+                    )}
                   </div>
                 </div>
               ) : activeTab.type === 'table-designer' ? (
@@ -1312,6 +1392,8 @@ export default function Home() {
                 <AISettings onClose={() => closeTab(activeTab.id)} />
               ) : activeTab.type === 'performance-advisor' ? (
                 <PerformanceAdvisor config={config} onClose={() => closeTab(activeTab.id)} />
+              ) : activeTab.type === 'mini-dashboards' ? (
+                <MiniDashboards onClose={() => closeTab(activeTab.id)} />
               ) : null
               }
             </>

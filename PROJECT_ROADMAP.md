@@ -122,10 +122,10 @@ This document tracks the development progress of **Data Forge**. It serves as a 
 ## 7. 📊 Data Visualization & Dashboards (Data Insights)
 *Goal: Transform data into visual insights effortlessly.*
 
-- [ ] **Quick Charts**
-    - [ ] One-click generation of Bar, Line, and Pie charts from Result Sets
-- [ ] **Mini Dashboards**
-    - [ ] Save and arrange multiple charts for monitoring key metrics
+- [x] **Quick Charts**
+    - [x] One-click generation of Bar, Line, and Pie charts from Result Sets
+- [x] **Mini Dashboards**
+    - [x] Save and arrange multiple charts for monitoring key metrics
 
 ## 8. 🧪 Mock Data Generator (Testing Tools)
 *Goal: Easily generate dummy data for development and testing.*

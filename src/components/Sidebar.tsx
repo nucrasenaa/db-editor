@@ -40,7 +40,7 @@ interface SidebarProps {
     onObjectSelect: (objectName: string, type: 'table' | 'view' | 'procedure' | 'synonym', database?: string) => void;
     onMetadataLoad?: (dbName: string, metadata: MetadataType) => void;
     selectedObject: string | null;
-    onAddClick: (type: 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'er-diagram' | 'server-monitor' | 'user-manager' | 'schema-compare' | 'ai-settings' | 'performance-advisor') => void;
+    onAddClick: (type: 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'er-diagram' | 'server-monitor' | 'user-manager' | 'schema-compare' | 'ai-settings' | 'performance-advisor' | 'mini-dashboards') => void;
     onViewScript: (fullName: string, type: 'table' | 'view' | 'procedure', database: string) => void;
     onRunQuery: (sql: string) => void;
     className?: string;
@@ -478,6 +478,14 @@ export default function Sidebar({
                                 >
                                     <TrendingUp className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
                                     <span className="text-[8px] font-bold uppercase tracking-tighter text-emerald-400/70">Advisor</span>
+                                </button>
+                                <button
+                                    onClick={() => onAddClick('mini-dashboards')}
+                                    className="flex flex-col items-center gap-2 p-2.5 rounded-xl bg-orange-500/5 hover:bg-orange-600/10 border border-orange-500/10 transition-all group"
+                                    title="Mini Dashboards"
+                                >
+                                    <LayoutDashboard className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[8px] font-bold uppercase tracking-tighter text-orange-400/70">Dashboards</span>
                                 </button>
                             </div>
                         )}
