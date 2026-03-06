@@ -153,10 +153,10 @@ This document tracks the development progress of **Data Forge**. It serves as a 
 ## 11. 💅 Advanced SQL Linter & Formatter (Code Quality)
 *Goal: Enforce SQL best practices and maintain clean code.*
 
-- [ ] **Custom Formatter**
-    - [ ] Fine-grained formatting options (e.g., uppercase keywords, line breaks)
-- [ ] **Smart Linter**
-    - [ ] Real-time warnings for anti-patterns (e.g., `SELECT *` without specific columns, missing `WHERE` in `UPDATE`)
+- [x] **Custom Formatter**
+    - [x] Fine-grained formatting options (e.g., uppercase keywords, line breaks)
+- [x] **Smart Linter**
+    - [x] Real-time warnings for anti-patterns (e.g., `SELECT *` without specific columns, missing `WHERE` in `UPDATE`)
 
 ## 12. 👥 Cloud Sync & Team Collaboration (Workspace Sharing)
 *Goal: Enable seamless transitions across devices and team sharing.*

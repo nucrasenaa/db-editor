@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, RotateCcw, Bookmark, Network, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Play, RotateCcw, Bookmark, Network, Sparkles, WandSparkles, AlignLeft } from 'lucide-react';
 import { saveBookmark } from '@/lib/history';
 import { Editor } from '@monaco-editor/react';
 import AICopilot from './AICopilot';
+import SQLLintPanel from './SQLLintPanel';
+import { lintSQL, formatSQL, type LintIssue } from '@/lib/sqlLinter';
 
 interface QueryEditorProps {
     onExecute: (query: string) => void;
@@ -19,10 +21,36 @@ interface QueryEditorProps {
 
 export default function QueryEditor({ onExecute, loading, metadata, allMetadata, query, onQueryChange, dbType, theme }: QueryEditorProps) {
     const [showCopilot, setShowCopilot] = useState(false);
+    const [lintIssues, setLintIssues] = useState<LintIssue[]>([]);
     const metadataRef = useRef(metadata);
     const allMetadataRef = useRef(allMetadata);
     const queryRef = useRef(query);
     const editorRef = useRef<any>(null);
+    const lintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Debounced lint on query change
+    useEffect(() => {
+        if (lintTimerRef.current) clearTimeout(lintTimerRef.current);
+        lintTimerRef.current = setTimeout(() => {
+            const issues = lintSQL(query, dbType);
+            setLintIssues(issues);
+        }, 600);
+        return () => { if (lintTimerRef.current) clearTimeout(lintTimerRef.current); };
+    }, [query, dbType]);
+
+    const handleFormat = useCallback(() => {
+        if (!query.trim()) return;
+        const formatted = formatSQL(query, { uppercaseKeywords: true, indentSize: 4 });
+        onQueryChange(formatted);
+    }, [query, onQueryChange]);
+
+    const handleGoToLine = useCallback((line: number, col: number) => {
+        if (editorRef.current) {
+            editorRef.current.revealLineInCenter(line);
+            editorRef.current.setPosition({ lineNumber: line, column: col });
+            editorRef.current.focus();
+        }
+    }, []);
 
     // Sync query to ref for auto-execute listener
     useEffect(() => {
@@ -109,6 +137,20 @@ export default function QueryEditor({ onExecute, loading, metadata, allMetadata,
             keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK],
             run: () => {
                 setShowCopilot(true);
+            }
+        });
+
+        editor.addAction({
+            id: 'format-sql',
+            label: 'Format SQL',
+            keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF],
+            run: () => {
+                const val = editor.getValue();
+                if (val.trim()) {
+                    const formatted = formatSQL(val, { uppercaseKeywords: true, indentSize: 4 });
+                    editor.setValue(formatted);
+                    onQueryChange(formatted);
+                }
             }
         });
 
@@ -234,6 +276,14 @@ export default function QueryEditor({ onExecute, loading, metadata, allMetadata,
                     >
                         <Sparkles className="w-4 h-4" />
                     </button>
+                    <button
+                        onClick={handleFormat}
+                        disabled={!query.trim()}
+                        className="p-1.5 hover:bg-emerald-500/10 rounded-md transition-colors text-muted-foreground hover:text-emerald-400 disabled:opacity-30"
+                        title="Format SQL (Cmd+Shift+F)"
+                    >
+                        <AlignLeft className="w-4 h-4" />
+                    </button>
                     <div className="h-4 w-px bg-border mx-1" />
                     <button
                         onClick={() => {
@@ -295,6 +345,9 @@ export default function QueryEditor({ onExecute, loading, metadata, allMetadata,
                     />
                 )}
             </div>
+
+            {/* SQL Lint Panel */}
+            <SQLLintPanel issues={lintIssues} onGoToLine={handleGoToLine} />
         </div>
     );
 }
