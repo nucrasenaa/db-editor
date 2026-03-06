@@ -269,16 +269,32 @@ export default function DataTable({
 
     if (!data || data.length === 0) {
         return (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                <div className="text-center space-y-2">
-                    <p className="text-sm italic">No data returned for this view</p>
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in-95 duration-500">
+                <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-accent/5 blur-3xl rounded-full" />
+                    <div className="relative w-24 h-24 rounded-3xl bg-muted/30 border border-border/50 flex items-center justify-center shadow-inner group">
+                        <DatabaseIcon className="w-10 h-10 text-muted-foreground/30 group-hover:scale-110 transition-transform duration-500" />
+                        <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center shadow-lg">
+                            <CloseIcon className="w-4 h-4 text-red-500/50" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-2 max-w-sm">
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground">No Records Found</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                        This view or request returned zero rows. Try adjusting your filters or checking the table metadata.
+                    </p>
+                </div>
+
+                {page > 1 && (
                     <button
                         onClick={() => onPageChange(1)}
-                        className="text-xs text-accent hover:underline"
+                        className="mt-8 px-6 py-2 bg-accent/10 hover:bg-accent/20 border border-accent/20 text-accent text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg active:scale-95"
                     >
                         Reset to Page 1
                     </button>
-                </div>
+                )}
             </div>
         );
     }

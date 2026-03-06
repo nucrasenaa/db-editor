@@ -1093,6 +1093,24 @@ export default function Home() {
           </button>
 
           <div className="flex-1 flex items-center overflow-x-auto no-scrollbar gap-1 mr-4 flex-nowrap h-full">
+            {tabs.length >= 2 && (
+              <button
+                onClick={() => {
+                  if (confirm('Close all open tabs?')) {
+                    const connectionId = config.connectionString
+                      ? `url-${config.connectionString}`
+                      : `${config.server}:${config.port}-${config.user}-${config.database}`;
+                    localStorage.removeItem(`tabs_${connectionId}`);
+                    setTabs([]);
+                    setActiveTabId(null);
+                  }
+                }}
+                className="p-2.5 hover:bg-red-500/10 rounded-xl text-muted-foreground hover:text-red-500 transition-all mr-1 shrink-0"
+                title="Close All Tabs"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
             {tabs.map((tab) => (
               <div
                 key={tab.id}
@@ -1134,6 +1152,8 @@ export default function Home() {
                 )}
               </div>
             ))}
+
+
 
             <button
               onClick={() => addQueryTab()}
@@ -1551,6 +1571,8 @@ export default function Home() {
                     };
                     setTabs([...tabs, newTab]);
                     setActiveTabId(id);
+                    // Execute immediately
+                    executeQuery(sql, { tabId: id, db: activeTab.database });
                   }}
                   onClose={() => closeTab(activeTab.id)}
                 />
