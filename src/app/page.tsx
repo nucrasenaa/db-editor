@@ -1075,7 +1075,7 @@ export default function Home() {
   return (
     <div className="flex bg-background h-screen overflow-hidden relative transition-colors duration-300">
       <div className={cn(
-        "fixed inset-0 bg-black/50 z-[60] lg:hidden transition-opacity duration-300",
+        "fixed inset-0 bg-black/60 backdrop-blur-[2px] z-[80] md:hidden transition-opacity duration-300",
         sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       )} onClick={() => setSidebarOpen(false)} />
 
@@ -1083,19 +1083,21 @@ export default function Home() {
         config={config}
         onObjectSelect={(name, type, db) => {
           handleObjectSelect(name, type, db);
-          if (window.innerWidth < 1024) setSidebarOpen(false);
+          if (window.innerWidth < 768) setSidebarOpen(false);
         }}
         onMetadataLoad={handleMetadataLoad}
         selectedObject={activeTab?.title || null}
+        onClose={() => setSidebarOpen(false)}
         onAddClick={(type) => {
           addDesignerTab(type);
-          if (window.innerWidth < 1024) setSidebarOpen(false);
+          if (window.innerWidth < 768) setSidebarOpen(false);
         }}
         onViewScript={handleViewScript}
         onRunQuery={handleRunHistoryQuery}
         className={cn(
-          "fixed inset-y-0 left-0 z-[70] lg:relative lg:flex transition-transform duration-300 transform",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          "fixed inset-y-0 left-0 z-[90] md:relative md:flex transition-transform duration-300 transform shadow-2xl md:shadow-none",
+          "pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       />
 
@@ -1104,12 +1106,12 @@ export default function Home() {
         <header className="h-14 border-b border-border bg-background/80 backdrop-blur-md flex items-center px-4 shrink-0 overflow-hidden relative z-50">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-2.5 mr-2 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground transition-all shrink-0"
+            className="md:hidden p-2.5 mr-2 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground transition-all shrink-0 active:scale-95"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          <div className="flex-1 flex items-center overflow-x-auto no-scrollbar gap-1 mr-4 flex-nowrap h-full">
+          <div className="flex-1 flex items-center overflow-x-auto no-scrollbar gap-1 mr-4 flex-nowrap h-full select-none touch-pan-x">
             {tabs.length >= 2 && (
               <button
                 onClick={() => {

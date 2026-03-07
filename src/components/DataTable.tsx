@@ -428,15 +428,15 @@ export default function DataTable({
                 </table>
             </div>
 
-            <div className="h-auto md:h-14 border border-t-0 border-border bg-muted/20 rounded-b-xl flex flex-col md:flex-row md:items-center justify-between px-4 md:px-6 py-3 md:py-0 gap-4 md:gap-0 shrink-0 sticky bottom-0 z-20 backdrop-blur-md">
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4">
-                    <div className="flex items-center justify-between w-full md:w-auto gap-4">
+            <div className="h-auto md:h-14 border border-t-0 border-border bg-card/40 rounded-b-xl flex flex-col md:flex-row md:items-center justify-between px-3 md:px-6 py-2.5 md:py-0 gap-2 md:gap-0 shrink-0 sticky bottom-0 z-20 backdrop-blur-md">
+                <div className="flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-4">
+                    <div className="flex items-center justify-between w-full md:w-auto gap-2">
                         <div className="relative" ref={exportRef}>
                             <button
                                 onClick={() => setShowExport(!showExport)}
-                                className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-lg bg-accent/10 hover:bg-accent/20 text-accent text-[10px] font-black uppercase tracking-widest transition-all border border-accent/20"
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 hover:bg-accent/20 text-accent text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all border border-accent/20 active:scale-95"
                             >
-                                <Download className="w-3.5 h-3.5" /> Export <ChevronDown className={cn("w-3 h-3 transition-transform", showExport && "rotate-180")} />
+                                <Download className="w-3 h-3 md:w-3.5 md:h-3.5" /> Export <ChevronDown className={cn("w-2.5 h-2.5 transition-transform", showExport && "rotate-180")} />
                             </button>
 
                             {showExport && (
@@ -462,83 +462,81 @@ export default function DataTable({
                         {onDeleteRows && selectedRows.length > 0 && (
                             <button
                                 onClick={() => onDeleteRows(selectedRows.map(i => data[i]))}
-                                className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest transition-all border border-red-500/20 md:ml-2 animate-in fade-in"
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all border border-red-500/20 animate-in fade-in active:scale-95"
                             >
-                                <Trash2 className="w-3.5 h-3.5" /> Drop ({selectedRows.length})
+                                <Trash2 className="w-3 h-3 md:w-3.5 md:h-3.5" /> Drop ({selectedRows.length})
                             </button>
                         )}
                         {sensitiveColumns.size > 0 && (
                             <button
                                 onClick={() => { setMaskingEnabled(m => !m); setRevealedCells(new Set()); }}
                                 className={cn(
-                                    "flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border md:ml-2",
+                                    "flex items-center gap-2 px-3 py-1.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all border active:scale-95",
                                     maskingEnabled
                                         ? "bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border-amber-500/20"
                                         : "bg-muted/50 hover:bg-muted text-muted-foreground border-border/50"
                                 )}
                                 title={maskingEnabled ? `Masking ON — ${sensitiveColumns.size} sensitive column(s) protected` : 'Masking OFF — data exposed'}
                             >
-                                {maskingEnabled ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                {maskingEnabled ? `Masked (${sensitiveColumns.size})` : 'Unmasked'}
+                                {maskingEnabled ? <EyeOff className="w-3 h-3 md:w-3.5 md:h-3.5" /> : <Eye className="w-3 h-3 md:w-3.5 md:h-3.5" />}
+                                {maskingEnabled ? `Masked` : 'Unmasked'}
                             </button>
                         )}
-                        <div className="md:hidden flex items-center gap-2">
-                            <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40 whitespace-nowrap">Row {data.length} / {totalRows || '?'}</span>
-                        </div>
                     </div>
 
                     <div className="hidden md:block h-4 w-px bg-border mx-2" />
 
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full md:w-auto justify-between md:justify-start border-t border-border/10 md:border-0 pt-2 md:pt-0">
+                    <div className="flex flex-row items-center gap-3 w-full md:w-auto justify-between md:justify-start border-t border-border/10 md:border-0 pt-2 md:pt-0">
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider opacity-60">Page:</span>
-                            <span className="text-xs text-foreground font-bold bg-muted/50 px-2 py-0.5 rounded border border-border/50">{page}</span>
+                            <span className="text-[9px] md:text-[10px] font-black text-muted-foreground uppercase tracking-wider opacity-60">P. {page}</span>
+                            <div className="hidden sm:block h-3 w-px bg-border/50" />
+                            <span className="text-[9px] md:text-[10px] font-black text-muted-foreground uppercase opacity-40 whitespace-nowrap">{data.length} / {totalRows || '?'} r</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider opacity-60">Size:</span>
                             <select
                                 value={pageSize}
                                 onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                                className="bg-muted border border-border rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+                                className="bg-muted/50 border border-border/50 rounded-lg px-2 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-accent font-bold"
                             >
                                 {[50, 100, 200, 500].map(size => (
-                                    <option key={size} value={size}>{size}</option>
+                                    <option key={size} value={size}>{size} / page</option>
                                 ))}
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center justify-center gap-1 border-t border-border/10 md:border-0 pt-2 md:pt-0">
-                    <button onClick={() => onPageChange(1)} disabled={page === 1} className="p-1.5 hover:bg-muted disabled:opacity-30 rounded-md transition-all">
+                <div className="flex items-center justify-center gap-1 border-t border-border/10 md:border-0 pt-2 md:pt-0 self-center">
+                    <button onClick={() => onPageChange(1)} disabled={page === 1} className="p-1.5 hover:bg-muted disabled:opacity-30 rounded-md transition-all active:scale-90">
                         <ChevronsLeft className="w-4 h-4" />
                     </button>
-                    <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="p-1.5 hover:bg-muted disabled:opacity-30 rounded-md transition-all mr-1">
+                    <button onClick={() => onPageChange(page - 1)} disabled={page === 1} className="p-1.5 hover:bg-muted disabled:opacity-30 rounded-md transition-all active:scale-90">
                         <ChevronLeft className="w-4 h-4" />
                     </button>
 
                     <div className="flex items-center gap-1 mx-1">
-                        {[...Array(Math.min(window?.innerWidth < 768 ? 3 : 5, Math.ceil((totalRows || 0) / pageSize) || 1))].map((_, i) => {
+                        {[...Array(Math.min(5, Math.ceil((totalRows || 0) / pageSize) || 1))].map((_, i) => {
                             const totalPages = Math.ceil((totalRows || 0) / pageSize) || 1;
                             let p = page;
-                            if (window?.innerWidth < 768) {
-                                // Simplified mobile pagination
-                                if (page === 1) p = i + 1;
-                                else if (page === totalPages) p = Math.max(1, totalPages - 2 + i);
-                                else p = Math.max(1, page - 1 + i);
+
+                            // Better stable pagination logic
+                            if (totalPages <= 5) {
+                                p = i + 1;
                             } else {
-                                p = page > 3 ? page - 2 + i : i + 1;
+                                if (page <= 3) p = i + 1;
+                                else if (page >= totalPages - 2) p = totalPages - 4 + i;
+                                else p = page - 2 + i;
                             }
 
-                            if (p > totalPages) return null;
+                            if (p > totalPages || p < 1) return null;
 
                             return (
                                 <button
                                     key={i}
                                     onClick={() => onPageChange(p)}
                                     className={cn(
-                                        "w-8 h-8 rounded-md text-xs font-medium transition-all",
-                                        page === p ? "bg-accent text-accent-foreground shadow-lg shadow-accent/20" : "hover:bg-muted text-muted-foreground"
+                                        "w-8 h-8 rounded-lg text-[10px] font-black uppercase transition-all active:scale-90",
+                                        page === p ? "bg-accent text-accent-foreground shadow-lg shadow-accent/20 border border-accent/20" : "hover:bg-muted text-muted-foreground border border-transparent"
                                     )}
                                 >
                                     {p}
@@ -547,10 +545,10 @@ export default function DataTable({
                         })}
                     </div>
 
-                    <button onClick={() => onPageChange(page + 1)} disabled={data.length < pageSize} className="p-1.5 hover:bg-muted disabled:opacity-30 rounded-md transition-all ml-1">
+                    <button onClick={() => onPageChange(page + 1)} disabled={data.length < pageSize} className="p-1.5 hover:bg-muted disabled:opacity-30 rounded-md transition-all active:scale-90">
                         <ChevronRight className="w-4 h-4" />
                     </button>
-                    <button onClick={() => onPageChange(page + 5)} disabled={data.length < pageSize} className="p-1.5 hover:bg-muted disabled:opacity-30 rounded-md transition-all">
+                    <button onClick={() => onPageChange(Math.ceil((totalRows || 0) / pageSize) || page + 1)} disabled={!totalRows || page >= Math.ceil(totalRows / pageSize)} className="p-1.5 hover:bg-muted disabled:opacity-30 rounded-md transition-all active:scale-90">
                         <ChevronsRight className="w-4 h-4" />
                     </button>
                 </div>

@@ -154,11 +154,11 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-5">
                         {/* DB Type Selection */}
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2 mb-1.5 opacity-60">
                                 Database Dialect
                             </label>
-                            <div className="grid grid-cols-3 gap-3">
+                            <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-2 md:gap-3">
                                 {dbTypes.map((type) => (
                                     <button
                                         key={type.id}
@@ -172,15 +172,15 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
                                             setConfig({ ...config, ...updates });
                                         }}
                                         className={cn(
-                                            "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all text-center group",
+                                            "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all text-center group active:scale-95",
                                             config.dbType === type.id
                                                 ? "border-accent bg-accent/5 ring-1 ring-accent/50"
                                                 : "border-border bg-card/50 hover:border-border/80",
                                             type.disabled && "opacity-40 cursor-not-allowed contrast-50 grayscale"
                                         )}
                                     >
-                                        <type.icon className={cn("w-6 h-6", config.dbType === type.id ? type.color : "text-muted-foreground")} />
-                                        <span className={cn("text-[10px] font-black uppercase tracking-tighter", config.dbType === type.id ? "text-foreground" : "text-muted-foreground")}>
+                                        <type.icon className={cn("w-5 h-5 md:w-6 md:h-6", config.dbType === type.id ? type.color : "text-muted-foreground")} />
+                                        <span className={cn("text-[9px] md:text-[10px] font-black uppercase tracking-tighter whitespace-nowrap", config.dbType === type.id ? "text-foreground" : "text-muted-foreground")}>
                                             {type.label}
                                         </span>
                                     </button>

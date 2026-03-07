@@ -30,7 +30,8 @@ import {
     Book,
     TestTubes,
     ShieldAlert,
-    Lock
+    Lock,
+    X
 } from 'lucide-react';
 import HistoryPanel from './HistoryPanel';
 import BookmarkPanel from './BookmarkPanel';
@@ -46,6 +47,7 @@ interface SidebarProps {
     onAddClick: (type: 'table-designer' | 'view-designer' | 'proc-designer' | 'import-wizard' | 'query-builder' | 'er-diagram' | 'server-monitor' | 'user-manager' | 'schema-compare' | 'ai-settings' | 'performance-advisor' | 'mini-dashboards' | 'mock-data') => void;
     onViewScript: (fullName: string, type: 'table' | 'view' | 'procedure', database: string) => void;
     onRunQuery: (sql: string) => void;
+    onClose?: () => void;
     className?: string;
 }
 
@@ -68,6 +70,7 @@ export default function Sidebar({
     onAddClick,
     onViewScript,
     onRunQuery,
+    onClose,
     className
 }: SidebarProps) {
     const [activeTab, setActiveTab] = useState<'explorer' | 'history' | 'bookmarks'>('explorer');
@@ -317,7 +320,25 @@ export default function Sidebar({
     }), [databases, dbMetadata, config.database]);
 
     return (
-        <div className={cn("w-80 h-screen border-r border-border flex flex-col bg-background/50 backdrop-blur-2xl transition-all duration-300", className)}>
+        <div className={cn(
+            "w-80 h-screen border-r border-border flex flex-col transition-all duration-300",
+            "bg-background/80 backdrop-blur-2xl dark:bg-background/50",
+            "[html.light_&]:bg-white [html.light_&]:backdrop-blur-none",
+            className
+        )}>
+            {/* Mobile Sidebar Header */}
+            <div className="flex md:hidden items-center justify-between px-5 py-4 border-b border-border/30 shrink-0">
+                <div className="flex items-center gap-2">
+                    <img src="/icon.png" alt="Logo" className="w-5 h-5 object-contain" />
+                    <span className="text-xs font-black uppercase tracking-[0.2em] gradient-text">Data Forge</span>
+                </div>
+                <button
+                    onClick={onClose}
+                    className="p-2 hover:bg-muted rounded-xl text-muted-foreground transition-all active:scale-95"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+            </div>
 
 
             {/* Sidebar Tabs */}
