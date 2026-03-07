@@ -24,6 +24,7 @@
     "mssql": "^12.2.0",
     "mysql2": "^3.18.2",
     "next": "16.1.6",
+    "next-pwa": "^5.6.0",
     "pg": "^8.19.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.1",
+    "@types/minimatch": "^5.1.2",
     "@types/mssql": "^9.1.9",
     "@types/node": "^20",
     "@types/pg": "^8.18.0",
