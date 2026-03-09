@@ -1,5 +1,19 @@
 # 🚀 Data Forge Release Notes
 
+## [v1.3.0] - 2026-03-09
+
+### 🖥️ Desktop & Electron Stability
+- **MSSQL Update Fix**: Resolved a critical issue where `rowsAffected` return values caused crashes in the Electron environment.
+- **Smart Table Resolution**: MSSQL update operations now use fully qualified 3-part names (`[database].[schema].[table]`). This prevents "Invalid object name" errors when executing updates across different database contexts.
+- **Execution Plan Repair**: Fixed a "Client-side exception" that occurred specifically in Electron when using the "Explain" feature for MySQL and PostgreSQL.
+
+### 🎨 UI & Layout Optimization
+- **Ergonomic View Switcher**: Relocated the **Table / Chart / Execution Plan** toggle from the top-right floating corner to the **bottom pagination bar**.
+- **Header Visibility**: This layout change ensures that table headers are never blocked by UI overlays, maintaining full interactivity for sorting and filtering.
+- **Unified Controls**: The result mode switcher is now consistently available in the footer across all result views (Table, Chart, and Plan).
+
+---
+
 ## [v1.2.1] - 2026-03-06
 
 ### 🛡️ Security & Hardening
