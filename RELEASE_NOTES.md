@@ -1,5 +1,22 @@
 # 🚀 Data Forge Release Notes
 
+## [v1.4.0] - 2026-03-10
+
+### 🧠 Intelligent Querying & Filtering
+- **Smart Filter Suggestions**: Replaced the standard filter input with a context-aware **Intelligent Filter**.
+    - **Column Autocomplete**: Automatically recognizes and suggests columns from the active table as you type.
+    - **SQL Command Palette**: Real-time suggestions for SQL keywords (`AND`, `OR`, `LIKE`, `IN`, `IS NULL`) and operators.
+    - **Productivity Boost**: Smart cursor handling and keyboard navigation (Arrows + Enter/Tab) for rapid filter building.
+
+### 🍱 Branding & Identity
+- **New App Icon**: Updated the main landing page to feature the official **Data Forge** high-resolution icon, replacing the generic database symbol.
+- **Visual Refinement**: Polished the feedback animations for table filtering and empty states.
+
+### 🛠 Stability & Enhancements
+- **Metadata Resilience**: Improved Cross-database schema intelligence for faster suggestion loading in the SQL Editor.
+
+---
+
 ## [v1.3.0] - 2026-03-09
 
 ### 🖥️ Desktop & Electron Stability

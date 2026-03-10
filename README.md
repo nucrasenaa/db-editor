@@ -1,4 +1,4 @@
-# Data Forge v1.2.1
+# Data Forge v1.4.0
 
 **Data Forge** is an enterprise-grade, high-performance database management studio and AI-powered SQL editor. Built with **Next.js** and **Electron**, it offers a sophisticated **"Nebula" aesthetic**—a premium, immersive interface with deep grays, restrained accents, and glassmorphism.
 
@@ -8,26 +8,32 @@ Data Forge provides a unified, multi-tabbed workspace for **SQL Server (MSSQL)**
 
 ---
 
-## 🚀 What's New in v1.2.1
+## 🚀 What's New in v1.4.0
 
-### 🔐 Universal Data Encryption
-- **Hardened LocalStorage** — Implemented a unified encryption layer using Electron `safeStorage` (Desktop) and **Web Crypto AES-GCM** (Web).
-- **Sensitive Data Protection** — SQL Query History, Bookmarks, and AI API Keys are now encrypted at rest.
-- **Auto-Migration** — Seamlessly detects and migrates plain-text data from older versions to the new encrypted format.
+### 🧠 Intelligent Querying & Filtering
+- **Smart Filter Suggestions** — Replaced standard table filtering with a context-aware **Intelligent Filter**.
+- **Contextual Autocomplete** — Real-time suggestions for table columns and SQL keywords (`AND`, `OR`, `LIKE`, etc.).
+- **Productivity Boost** — Built-in keyboard navigation (Arrows + Enter/Tab) for rapid filter construction.
 
-### ✨ UX & Workflow Refinements
-- **"Close All Tabs"** — Quickly clear your workspace with a new dedicated button (includes confirmation safety).
-- **Visual Query Builder 2.0** — Generated SQL now auto-executes, streamlining the "Design-to-Data" workflow.
-- **Premium Empty States** — Redesigned "No Data" views with glowing effects and refined typography.
-- **Smart Reset Controls** — Pagination controls now intelligently hide/show based on navigation state.
+### 🍱 Branding & Identity
+- **New App Icon** — The official high-resolution branding is now featured on the landing page.
+- **Visual Refinement** — Polished feedback animations and improved empty states across the workspace.
 
-### 🌌 Nebula Design System
-- **High-End Aesthetic** — A complete UI overhaul focusing on deep obsidian tones, subtle gradients, and a "developer-first" visual hierarchy.
-- **Micro-Animations** — Enhanced feedback for connections, tab switching, and query execution.
+### 🛠 Metadata Intelligence
+- **Faster Suggestions** — Optimized cross-database schema loading for an even snappier SQL editor experience.
 
 ---
 
-## 🚀 Previously in v1.2.0
+## 🚀 Previously in v1.3.0
+
+### 🖥️ Desktop & Electron Stability
+- **MSSQL Update Fix** — Resolved `rowsAffected` return issues in Electron.
+- **Smart Table Resolution** — Enforced 3-part naming for all MSSQL updates.
+- **Execution Plan Repair** — Fixed client-side exceptions during plan analysis.
+
+---
+
+## 🚀 Previously in v1.2.1
 
 ### 🛡️ Production Safety & Environment Management
 - **Environment Color Coding** — Assign colors (Red/Orange/Green/Purple) to connections for visual safety.

@@ -31,9 +31,18 @@ When creating or editing a connection, you can configure:
 ## 3. Viewing & Editing Data
 
 - **Inline Editing**: Double-click any cell in a Table View to edit it. Press `Enter` or click ✅ to save, `Escape` or ❌ to cancel.
-- **Filtering**: Use the search bar at the top of a data tab to filter rows via a SQL `WHERE` clause.
 - **Sorting**: Click any column header to sort ascending/descending.
 - **Pagination**: Navigate pages using the footer controls and select page size (50 / 100 / 200 / 500 rows).
+
+### Intelligent Filter *(v1.4.0)*
+The standard table filter has been replaced with a context-aware **Intelligent Filter**:
+- **Automatic Suggestions**: As you type into the "Filter" box, Data Forge suggests:
+  - **Column Names** from the current table.
+  - **SQL Keywords** (`AND`, `OR`, `LIKE`, `IN`, `IS NULL`, etc.).
+  - **Operators** (`=`, `!=`, `>`, `<`, etc.).
+- **Keyboard Friendly**: Navigate suggestions using `Arrow keys` and select with `Enter` or `Tab`. 
+- **Auto-Positioning**: Smartly handles cursor placement and spacing after a selection.
+- **Context-Aware**: Suggestions only appear when they are syntactically relevant.
 
 ### Bulk Row Deletion *(v1.2.0)*
 1. Click checkboxes on the left side of rows to select them (or use the header checkbox to Select All).

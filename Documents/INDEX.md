@@ -1,6 +1,6 @@
 # 📔 Data Forge Documentation Hub
 
-Welcome to the official documentation for **Data Forge v1.2.0**. This hub serves as the primary resource for both users and developers to understand, utilize, and extend the application.
+Welcome to the official documentation for **Data Forge v1.4.0**. This hub serves as the primary resource for both users and developers to understand, utilize, and extend the application.
 
 ## 🚀 Getting Started
 - **[User Guide](./USER_GUIDE.md)**: Connect to databases, browse and edit data, use all smart tools.
@@ -11,7 +11,7 @@ Welcome to the official documentation for **Data Forge v1.2.0**. This hub serves
 
 ---
 
-## ✨ Feature Summary (v1.2.0)
+## ✨ Feature Summary (v1.4.0)
 
 | Category | Features |
 |---|---|
@@ -55,4 +55,4 @@ Welcome to the official documentation for **Data Forge v1.2.0**. This hub serves
 | `Cmd/Ctrl + W` | Close current tab |
 
 ---
-*Data Forge v1.2.0 — Created by Three Man Dev © 2026, Bangkok, Thailand*
+*Data Forge v1.4.0 — Created by Three Man Dev © 2026, Bangkok, Thailand*
