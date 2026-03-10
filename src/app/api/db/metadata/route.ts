@@ -10,7 +10,34 @@ export async function POST(req: NextRequest) {
         const dbProxy = await getDbProxy({ ...config, dbType: dialect });
 
         try {
-            if (dialect === 'mysql' || dialect === 'mariadb' || dialect === 'postgres') {
+            if (dialect === 'mongodb') {
+                const collections = await dbProxy.query(JSON.stringify({ action: 'listCollections' }));
+                return NextResponse.json({
+                    success: true,
+                    database: targetDb,
+                    metadata: {
+                        databases: [{ name: targetDb || 'admin' }],
+                        schemas: [{ name: 'public' }],
+                        tables: Array.isArray(collections) ? collections.map((c: any) => ({ name: c.name, schema: 'public', fullName: c.name })) : [],
+                        views: [],
+                        procedures: [],
+                        synonyms: []
+                    }
+                });
+            } else if (dialect === 'redis') {
+                return NextResponse.json({
+                    success: true,
+                    database: targetDb || '0',
+                    metadata: {
+                        databases: [{ name: targetDb || '0' }],
+                        schemas: [],
+                        tables: [{ name: 'Keys', schema: 'public', fullName: 'Keys' }],
+                        views: [],
+                        procedures: [],
+                        synonyms: []
+                    }
+                });
+            } else if (dialect === 'mysql' || dialect === 'mariadb' || dialect === 'postgres') {
                 const queries = dialect === 'postgres' ? {
                     databases: `SELECT datname as name FROM pg_database WHERE datistemplate = false AND datname != 'postgres'`,
                     schemas: `SELECT schema_name as name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog')`,

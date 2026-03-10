@@ -13,6 +13,13 @@ export async function POST(req: NextRequest) {
         const dbProxy = await getDbProxy({ ...config, dbType: dialect });
 
         try {
+            if (dialect === 'mongodb' || dialect === 'redis') {
+                return NextResponse.json({
+                    success: true,
+                    columns: []
+                });
+            }
+
             // General query that works on most SQL dialects via INFORMATION_SCHEMA
             let query = '';
 

@@ -511,7 +511,11 @@ export default function Home() {
         query = `EXEC ${fullName}`;
       }
     } else {
-      if (dialect === 'mssql') {
+      if (dialect === 'mongodb') {
+        query = `{\n  "collection": "${fullName.split('.').pop()}",\n  "action": "find",\n  "query": {}\n}`;
+      } else if (dialect === 'redis') {
+        query = fullName === 'Keys' ? 'KEYS *' : `GET ${fullName}`;
+      } else if (dialect === 'mssql') {
         query = `SELECT TOP 100 * FROM [${db}].${fullName}`;
       } else if (dialect === 'postgres') {
         query = `SELECT * FROM ${fullName} LIMIT 100`;

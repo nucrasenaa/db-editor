@@ -126,8 +126,8 @@ function setupIpcHandlers() {
 
                 const isMultiStatement = queryToExec.trim().split(';').filter(s => s.trim().length > 0).length > 1;
 
-                // Apply pagination logic for SINGLE SELECT queries only
-                if (!isExplain && !isMultiStatement && isSelect && !queryToExec.toUpperCase().includes('OFFSET') && !queryToExec.toUpperCase().includes('LIMIT') && !queryToExec.toUpperCase().includes('GROUP BY')) {
+                // Apply pagination logic for SINGLE SELECT queries only (skip for NoSQL)
+                if (dialect !== 'mongodb' && dialect !== 'redis' && !isExplain && !isMultiStatement && isSelect && !queryToExec.toUpperCase().includes('OFFSET') && !queryToExec.toUpperCase().includes('LIMIT') && !queryToExec.toUpperCase().includes('GROUP BY')) {
                     const offset = (page - 1) * pageSize;
                     let baseQuery = queryToExec.replace(/;$/, '');
                     if (dialect === 'mssql') {
@@ -220,7 +220,32 @@ function setupIpcHandlers() {
             const dialect = config.dbType || 'mssql';
             const dbProxy = await getDbProxy(config);
             try {
-                if (dialect === 'mysql' || dialect === 'mariadb' || dialect === 'postgres') {
+                if (dialect === 'mongodb') {
+                    const collections = await dbProxy.query(JSON.stringify({ action: 'listCollections' }));
+                    return {
+                        success: true,
+                        metadata: {
+                            databases: [{ name: config.database || 'admin' }],
+                            schemas: [{ name: 'public' }],
+                            tables: Array.isArray(collections) ? collections.map(c => ({ name: c.name, schema: 'public', fullName: c.name })) : [],
+                            views: [],
+                            procedures: [],
+                            synonyms: []
+                        }
+                    };
+                } else if (dialect === 'redis') {
+                    return {
+                        success: true,
+                        metadata: {
+                            databases: [{ name: config.database || '0' }],
+                            schemas: [],
+                            tables: [{ name: 'Keys', schema: 'public', fullName: 'Keys' }],
+                            views: [],
+                            procedures: [],
+                            synonyms: []
+                        }
+                    };
+                } else if (dialect === 'mysql' || dialect === 'mariadb' || dialect === 'postgres') {
                     const queries = dialect === 'postgres' ? {
                         databases: `SELECT datname as name FROM pg_database WHERE datistemplate = false AND datname != 'postgres'`,
                         schemas: `SELECT schema_name as name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog')`,
@@ -351,6 +376,13 @@ function setupIpcHandlers() {
             const dialect = config.dbType || 'mssql';
             const dbProxy = await getDbProxy(config);
             try {
+                if (dialect === 'mongodb' || dialect === 'redis') {
+                    return {
+                        success: true,
+                        tables: [],
+                        relationships: []
+                    };
+                }
                 let tablesResult = [];
                 let fksResult = [];
 
@@ -503,6 +535,9 @@ function setupIpcHandlers() {
             const dbProxy = await getDbProxy({ ...config, database: targetDb });
             try {
                 let script = '';
+                if (dialect === 'mongodb' || dialect === 'redis') {
+                    return { success: false, message: 'DDL is not supported for NoSQL databases.' };
+                }
                 if (dialect === 'mssql') {
                     if (type === 'table') {
                         // Simplified Table DDL generator for MSSQL
@@ -549,6 +584,9 @@ function setupIpcHandlers() {
             const dialect = config.dbType || 'mssql';
             const dbProxy = await getDbProxy(config);
             try {
+                if (dialect === 'mongodb' || dialect === 'redis') {
+                    return { success: true, columns: [] };
+                }
                 let query = '';
                 if (dialect === 'mssql') {
                     const schemaPart = schema ? `AND TABLE_SCHEMA = '${schema.replace(/'/g, "''")}'` : '';

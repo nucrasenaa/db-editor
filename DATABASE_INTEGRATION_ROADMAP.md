@@ -32,14 +32,14 @@
 ## 🚀 Phase 3: NoSQL & Key-Value Stores (Mid-term)
 *เป้าหมาย: ก้าวข้ามขีดจำกัดของ Relational DB สู่ Modern Data Architecture*
 
-- [ ] **MongoDB (Document-based)**
-    - [ ] Visual Document Explorer (Tree View สำหรับ JSON)
-    - [ ] ระบบเปลี่ยน Natural Language เป็น MongoDB Aggregation Pipelines
-    - [ ] Schema discovery สำหรับ Collection ที่ไม่มีโครงสร้างตายตัว
-- [ ] **Redis (Key-Value Browser)**
-    - [ ] ระบบ List/Hash/Set explorer
-    - [ ] Real-time monitoring ของ memory usage
-    - [ ] CLI แบบ interactive ภายใน Data Forge
+- [x] **MongoDB (Document-based) - (Core Driver & Connection Engine)**
+    - [x] Visual Document Explorer (Tree View สำหรับ JSON)
+    - [x] ระบบเปลี่ยน Natural Language เป็น MongoDB Aggregation Pipelines
+    - [x] Schema discovery สำหรับ Collection ที่ไม่มีโครงสร้างตายตัว (Basic listCollections Supported)
+- [x] **Redis (Key-Value Browser) - (Core Driver & CLI Emulation)**
+    - [x] ระบบ List/Hash/Set explorer
+    - [x] Real-time monitoring ของ memory usage
+    - [x] CLI แบบ interactive ภายใน Data Forge (Basic Support via Query Box)
 
 ## ☁️ Phase 4: Cloud Data Warehouses & Big Data (Long-term)
 *เป้าหมาย: จัดการข้อมูลระดับ Terabyte/Petabyte บน Cloud*

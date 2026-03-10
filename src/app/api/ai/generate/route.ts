@@ -12,7 +12,37 @@ export async function POST(req: Request) {
 
         const schemaContext = generateSchemaContext(schema);
 
-        const systemPrompt = `
+        const isMongo = dbType === 'mongodb';
+        const isRedis = dbType === 'redis';
+
+        let systemPrompt = '';
+        if (isMongo) {
+            systemPrompt = `
+You are an expert MongoDB Query and Aggregation Pipeline Generator.
+Generate a valid JSON object representing a MongoDB query or aggregation based on the request.
+Context:
+${schemaContext}
+
+Rules:
+1. ONLY return the JSON object. No markdown formatting, no explanations.
+2. Your response MUST be valid JSON format that matches our application's expected format:
+   For simple queries:
+   { "collection": "collection_name", "action": "find", "query": {...}, "limit": 100 }
+   For aggregations (group by, complex joins):
+   { "collection": "collection_name", "action": "aggregate", "pipeline": [{...}, {...}] }
+3. Always specify the "collection" and "action" fields.
+`;
+        } else if (isRedis) {
+            systemPrompt = `
+You are an expert Redis Command Generator.
+Generate a valid Redis CLI command based on the request.
+
+Rules:
+1. ONLY return the raw Redis command. No markdown formatting, no explanations.
+2. Examples: GET mykey, SET mykey "value", KEYS *, HGETALL user:1000
+`;
+        } else {
+            systemPrompt = `
 You are an expert SQL Generator for ${dbType || 'MSSQL'}.
 Generate a valid SQL query based on the database schema provided:
 ${schemaContext}
@@ -24,6 +54,7 @@ Rules:
 4. If you don't know the schema for a requested table, assume standard naming conventions.
 5. If the user asks for data modification (Insert, Update, Delete), ensure the query is accurate.
 `;
+        }
 
         let url = '';
         let headers: any = { 'Content-Type': 'application/json' };
@@ -126,7 +157,7 @@ Rules:
         }
 
         // Cleanup: remove markdown if present
-        sql = sql.replace(/```sql\n?/gi, '').replace(/```\n?/g, '').trim();
+        sql = sql.replace(/```sql\n?/gi, '').replace(/```json\n?/gi, '').replace(/```\n?/g, '').trim();
 
         return NextResponse.json({ success: true, sql });
 

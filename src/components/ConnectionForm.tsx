@@ -107,6 +107,8 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
         { id: 'mysql', label: 'MySQL', icon: Database, color: 'text-orange-500', defaultPort: 3306, disabled: false },
         { id: 'mariadb', label: 'MariaDB', icon: Database, color: 'text-emerald-500', defaultPort: 3306, disabled: false },
         { id: 'postgres', label: 'Postgres', icon: Database, color: 'text-indigo-500', defaultPort: 5432, disabled: false },
+        { id: 'mongodb', label: 'MongoDB', icon: Database, color: 'text-green-500', defaultPort: 27017, disabled: false },
+        { id: 'redis', label: 'Redis', icon: Database, color: 'text-red-500', defaultPort: 6379, disabled: false },
     ];
 
     return (

@@ -157,6 +157,35 @@ export default function VisualQueryBuilder({ metadata: initialMetadata, config, 
         if (selectedTables.length === 0) return '-- Select tables to begin';
 
         const dialect = config?.dbType || 'mssql';
+
+        if (dialect === 'mongodb') {
+            const table = selectedTables[0];
+            const cols = selectedColumns[table] || [];
+
+            // Build projection object
+            let projectionStr = '';
+            if (cols.length > 0) {
+                const projObj: Record<string, number> = {};
+                cols.forEach(c => projObj[c] = 1);
+                projectionStr = `\n  "projection": ${JSON.stringify(projObj)},`;
+            }
+
+            return `{
+  "collection": "${table}",
+  "action": "find",
+  "query": {},${projectionStr}
+  "limit": 100
+}`;
+        }
+
+        if (dialect === 'redis') {
+            // Redis just uses simple commands
+            if (selectedTables[0] === 'Keys') {
+                return `KEYS *`;
+            }
+            return `GET ${selectedTables[0]}`;
+        }
+
         const q = dialect === 'mssql' ? (s: string) => `[${s}]` : (s: string) => `\`${s}\``;
 
         let sql = 'SELECT ';

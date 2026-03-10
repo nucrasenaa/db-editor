@@ -369,7 +369,11 @@ export default function DataTable({
                                     const isRevealed = isCellRevealed(i, col);
                                     const shouldMask = maskingEnabled && isSensitive && !isRevealed;
                                     const rawVal = row[col];
-                                    const displayVal = shouldMask ? maskValue(rawVal, col) : (rawVal === null ? 'NULL' : String(rawVal));
+                                    let strVal = 'NULL';
+                                    if (rawVal !== null && rawVal !== undefined) {
+                                        strVal = typeof rawVal === 'object' ? JSON.stringify(rawVal) : String(rawVal);
+                                    }
+                                    const displayVal = shouldMask ? maskValue(strVal, col) : strVal;
                                     return (
                                         <td
                                             key={col}
@@ -413,7 +417,8 @@ export default function DataTable({
                                             ) : (
                                                 <span className={cn(
                                                     rawVal === null && !shouldMask && "text-muted-foreground/30 italic text-[10px]",
-                                                    shouldMask && "text-muted-foreground/40 tracking-widest select-none"
+                                                    shouldMask && "text-muted-foreground/40 tracking-widest select-none",
+                                                    typeof rawVal === 'object' && rawVal !== null && "text-green-500/80" // Make JSON stand out
                                                 )}>
                                                     {displayVal}
                                                     {shouldMask && (

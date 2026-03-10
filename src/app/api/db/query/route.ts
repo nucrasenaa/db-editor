@@ -40,7 +40,11 @@ export async function POST(req: NextRequest) {
 
             // Words that alter data or schema. We except xp_readerrorlog because it's a read-only diagnostic task.
             // We also allow INSERT INTO @ because table variables are safe for read-only sessions.
-            const destructiveWords = /^(INSERT(?! INTO @)|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|MERGE|GRANT|REVOKE|EXEC(?!UTE?\s+(master\.|sys\.)?(sys\.)?xp_readerrorlog)|RENAME|COMMENT)\b/i;
+            const destructiveWords = dialect === 'mongodb'
+                ? /("action"\s*:\s*"(?:delete|remove|drop|update|insert|replace)")|deleteMany|deleteOne|updateMany|updateOne/i
+                : dialect === 'redis'
+                    ? /^(DEL|FLUSHDB|FLUSHALL|SET|MSET|HSET|SADD|ZADD|LSET|HDEL|SREM|ZREM|LREM|RENAME)\b/i
+                    : /^(INSERT(?! INTO @)|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|MERGE|GRANT|REVOKE|EXEC(?!UTE?\s+(master\.|sys\.)?(sys\.)?xp_readerrorlog)|RENAME|COMMENT)\b/i;
 
             const hasDestructive = statements.some((stmt: string) => destructiveWords.test(stmt));
             if (hasDestructive || destructiveWords.test(noCommentsQuery)) {
@@ -98,8 +102,8 @@ export async function POST(req: NextRequest) {
 
             const isMultiStatement = queryToExec.trim().split(';').filter((s: string) => s.trim().length > 0).length > 1;
 
-            // Apply pagination logic for SINGLE SELECT queries only
-            if (!isExplain && !isMultiStatement && isSelect && !queryToExec.toUpperCase().includes('OFFSET') && !queryToExec.toUpperCase().includes('LIMIT') && !queryToExec.toUpperCase().includes('GROUP BY')) {
+            // Apply pagination logic for SINGLE SELECT queries only (skip for NoSQL)
+            if (dialect !== 'mongodb' && dialect !== 'redis' && !isExplain && !isMultiStatement && isSelect && !queryToExec.toUpperCase().includes('OFFSET') && !queryToExec.toUpperCase().includes('LIMIT') && !queryToExec.toUpperCase().includes('GROUP BY')) {
                 const offset = (page - 1) * pageSize;
 
                 // Clean up base query

@@ -130,6 +130,49 @@ export default function ServerMonitor({ config, onClose }: ServerMonitorProps) {
                     setActiveRequests(res.resultSets[2].data || []);
                     setWaitStats(res.resultSets[3].data || []);
                 }
+            } else if (dialect === 'redis') {
+                const memRes = await apiRequest('/api/db/query', 'POST', { config, query: 'INFO memory' });
+                const statsRes = await apiRequest('/api/db/query', 'POST', { config, query: 'INFO stats' });
+                const clientsRes = await apiRequest('/api/db/query', 'POST', { config, query: 'INFO clients' });
+
+                if (memRes.success && statsRes.success && clientsRes.success) {
+                    const parseInfo = (str: string) => {
+                        const lines = str.split('\n');
+                        const obj: any = {};
+                        for (const line of lines) {
+                            if (line.includes(':')) {
+                                const [k, v] = line.split(':');
+                                obj[k.trim()] = v.trim();
+                            }
+                        }
+                        return obj;
+                    };
+
+                    const memInfo = parseInfo(memRes.data[0]?.result || '');
+                    const statsInfo = parseInfo(statsRes.data[0]?.result || '');
+                    const clientsInfo = parseInfo(clientsRes.data[0]?.result || '');
+
+                    const usedMemHuman = memInfo.used_memory_human || '0B';
+                    const activeConnections = parseInt(clientsInfo.connected_clients || '0');
+                    const opsPerSec = parseInt(statsInfo.instantaneous_ops_per_sec || '0');
+                    const totalConnections = parseInt(statsInfo.total_connections_received || '0');
+                    const keyspaceHits = parseInt(statsInfo.keyspace_hits || '0');
+                    const keyspaceMisses = parseInt(statsInfo.keyspace_misses || '0');
+                    const hitRate = keyspaceHits + keyspaceMisses > 0
+                        ? Math.round((keyspaceHits / (keyspaceHits + keyspaceMisses)) * 100)
+                        : 0;
+
+                    setStats({
+                        isRedis: true,
+                        usedMemory: usedMemHuman,
+                        activeConnections,
+                        opsPerSec,
+                        totalConnections,
+                        hitRate,
+                        rawMem: memInfo,
+                        rawStats: statsInfo
+                    });
+                }
             }
         } catch (err) {
             console.error('[Monitor] Error fetching server health:', err);
@@ -246,94 +289,131 @@ export default function ServerMonitor({ config, onClose }: ServerMonitorProps) {
                             <>
                                 {/* Stats Grid */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <StatCard
-                                        title="SQL CPU Usage"
-                                        value={`${stats?.cpu}%`}
-                                        subtitle={`System Idle: ${100 - (stats?.systemCpu || 0)}%`}
-                                        icon={<Cpu className="w-5 h-5" />}
-                                        color="red"
-                                    />
-                                    <StatCard
-                                        title="Buffer Cache Hit"
-                                        value={`${stats?.cacheHit}%`}
-                                        subtitle="Target: >95.0%"
-                                        icon={<HardDrive className="w-5 h-5" />}
-                                        color="emerald"
-                                    />
-                                    <StatCard
-                                        title="Page Life Expectancy"
-                                        value={`${Math.floor(stats?.ple / 60)}m`}
-                                        subtitle={`${stats?.ple} seconds`}
-                                        icon={<Clock className="w-5 h-5" />}
-                                        color="amber"
-                                    />
-                                    <StatCard
-                                        title="Active Requests"
-                                        value={activeRequests.length}
-                                        subtitle="Exclusive of monitor"
-                                        icon={<Zap className="w-5 h-5" />}
-                                        color="indigo"
-                                    />
+                                    {stats?.isRedis ? (
+                                        <>
+                                            <StatCard
+                                                title="Used Memory"
+                                                value={stats.usedMemory}
+                                                subtitle="Redis RAM Usage"
+                                                icon={<HardDrive className="w-5 h-5" />}
+                                                color="emerald"
+                                            />
+                                            <StatCard
+                                                title="Active Clients"
+                                                value={stats.activeConnections}
+                                                subtitle="Connected clients"
+                                                icon={<Activity className="w-5 h-5" />}
+                                                color="blue"
+                                            />
+                                            <StatCard
+                                                title="Ops / Sec"
+                                                value={stats.opsPerSec}
+                                                subtitle="Instantaneous Ops"
+                                                icon={<Zap className="w-5 h-5" />}
+                                                color="amber"
+                                            />
+                                            <StatCard
+                                                title="Cache Hit Rate"
+                                                value={`${stats.hitRate}%`}
+                                                subtitle="Keyspace hit/miss ratio"
+                                                icon={<Database className="w-5 h-5" />}
+                                                color="indigo"
+                                            />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <StatCard
+                                                title="SQL CPU Usage"
+                                                value={`${stats?.cpu || 0}%`}
+                                                subtitle={`System Idle: ${100 - (stats?.systemCpu || 100)}%`}
+                                                icon={<Cpu className="w-5 h-5" />}
+                                                color="red"
+                                            />
+                                            <StatCard
+                                                title="Buffer Cache Hit"
+                                                value={`${stats?.cacheHit || 0}%`}
+                                                subtitle="Target: >95.0%"
+                                                icon={<HardDrive className="w-5 h-5" />}
+                                                color="emerald"
+                                            />
+                                            <StatCard
+                                                title="Page Life Expectancy"
+                                                value={`${Math.floor((stats?.ple || 0) / 60)}m`}
+                                                subtitle={`${stats?.ple || 0} seconds`}
+                                                icon={<Clock className="w-5 h-5" />}
+                                                color="amber"
+                                            />
+                                            <StatCard
+                                                title="Active Requests"
+                                                value={activeRequests.length}
+                                                subtitle="Exclusive of monitor"
+                                                icon={<Zap className="w-5 h-5" />}
+                                                color="indigo"
+                                            />
+                                        </>
+                                    )}
                                 </div>
 
                                 {/* Active Queries */}
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <Terminal className="w-4 h-4 text-emerald-500" />
-                                            <h3 className="text-xs font-black uppercase tracking-widest">Active Requests</h3>
+                                {!stats?.isRedis && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Terminal className="w-4 h-4 text-emerald-500" />
+                                                <h3 className="text-xs font-black uppercase tracking-widest">Active Requests</h3>
+                                            </div>
+                                            <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Live Updates every 5s</span>
                                         </div>
-                                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Live Updates every 5s</span>
-                                    </div>
 
-                                    <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl">
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-left border-collapse">
-                                                <thead>
-                                                    <tr className="bg-muted/30 border-b border-border">
-                                                        <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground">Session</th>
-                                                        <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground">DB</th>
-                                                        <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground">Status</th>
-                                                        <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground">CPU</th>
-                                                        <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground">Wait Type</th>
-                                                        <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground">SQL Text</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-border">
-                                                    {activeRequests.length === 0 ? (
-                                                        <tr>
-                                                            <td colSpan={6} className="px-4 py-12 text-center text-[10px] text-muted-foreground uppercase tracking-widest opacity-40">
-                                                                No user requests currently processing
-                                                            </td>
+                                        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl">
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead>
+                                                        <tr className="bg-muted/30 border-b border-border">
+                                                            <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground">Session</th>
+                                                            <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground">DB</th>
+                                                            <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground">Status</th>
+                                                            <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground">CPU</th>
+                                                            <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground">Wait Type</th>
+                                                            <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-muted-foreground">SQL Text</th>
                                                         </tr>
-                                                    ) : (
-                                                        activeRequests.map((req, i) => (
-                                                            <tr key={i} className="hover:bg-muted/20 transition-colors group">
-                                                                <td className="px-4 py-4 text-xs font-mono font-bold text-emerald-500">{req.session_id}</td>
-                                                                <td className="px-4 py-4 text-[10px] uppercase font-bold text-muted-foreground">{req.database_name}</td>
-                                                                <td className="px-4 py-4">
-                                                                    <span className={cn("px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest",
-                                                                        req.status === 'suspended' ? "bg-amber-500/10 text-amber-500" : "bg-emerald-500/10 text-emerald-500")}>
-                                                                        {req.status}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="px-4 py-4 text-xs font-mono">{req.cpu_time}ms</td>
-                                                                <td className="px-4 py-4">
-                                                                    <span className="text-[10px] font-mono text-muted-foreground break-all">{req.wait_type || 'None'}</span>
-                                                                </td>
-                                                                <td className="px-4 py-4">
-                                                                    <div className="max-w-md truncate text-xs font-mono text-foreground/80 group-hover:text-foreground transition-colors">
-                                                                        {req.query_text}
-                                                                    </div>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-border">
+                                                        {activeRequests.length === 0 ? (
+                                                            <tr>
+                                                                <td colSpan={6} className="px-4 py-12 text-center text-[10px] text-muted-foreground uppercase tracking-widest opacity-40">
+                                                                    No user requests currently processing
                                                                 </td>
                                                             </tr>
-                                                        ))
-                                                    )}
-                                                </tbody>
-                                            </table>
+                                                        ) : (
+                                                            activeRequests.map((req, i) => (
+                                                                <tr key={i} className="hover:bg-muted/20 transition-colors group">
+                                                                    <td className="px-4 py-4 text-xs font-mono font-bold text-emerald-500">{req.session_id}</td>
+                                                                    <td className="px-4 py-4 text-[10px] uppercase font-bold text-muted-foreground">{req.database_name}</td>
+                                                                    <td className="px-4 py-4">
+                                                                        <span className={cn("px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest",
+                                                                            req.status === 'suspended' ? "bg-amber-500/10 text-amber-500" : "bg-emerald-500/10 text-emerald-500")}>
+                                                                            {req.status}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-4 py-4 text-xs font-mono">{req.cpu_time}ms</td>
+                                                                    <td className="px-4 py-4">
+                                                                        <span className="text-[10px] font-mono text-muted-foreground break-all">{req.wait_type || 'None'}</span>
+                                                                    </td>
+                                                                    <td className="px-4 py-4">
+                                                                        <div className="max-w-md truncate text-xs font-mono text-foreground/80 group-hover:text-foreground transition-colors">
+                                                                            {req.query_text}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
                             </>
                         )}
 

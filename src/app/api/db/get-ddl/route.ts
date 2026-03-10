@@ -11,6 +11,10 @@ export async function POST(req: NextRequest) {
             const dialect = config.dbType || 'mssql';
             let script = '';
 
+            if (dialect === 'mongodb' || dialect === 'redis') {
+                return NextResponse.json({ success: false, message: 'DDL is not supported for NoSQL databases.' });
+            }
+
             if (dialect === 'mssql') {
                 if (type === 'table') {
                     // Simplified Table DDL generator for MSSQL

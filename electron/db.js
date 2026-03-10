@@ -2,6 +2,8 @@ const mssql = require('tedious');
 const mysql = require('mysql2/promise');
 const { Pool: PgPool } = require('pg');
 const mssqlPkg = require('mssql');
+const { MongoClient } = require('mongodb');
+const Redis = require('ioredis');
 
 async function getDbProxy(config) {
     let dbType = config.dbType;
@@ -12,6 +14,8 @@ async function getDbProxy(config) {
         if (cs.startsWith('mysql:')) dbType = 'mysql';
         else if (cs.startsWith('mariadb:')) dbType = 'mariadb';
         else if (cs.startsWith('postgres:') || cs.startsWith('postgresql:')) dbType = 'postgres';
+        else if (cs.startsWith('mongodb:')) dbType = 'mongodb';
+        else if (cs.startsWith('redis:')) dbType = 'redis';
         else if (cs.startsWith('mssql:')) dbType = 'mssql';
     }
 
@@ -96,6 +100,64 @@ async function getDbProxy(config) {
             },
             close: async () => {
                 await pool.end();
+            }
+        };
+    } else if (dbType === 'mongodb') {
+        const uri = config.connectionString || `mongodb://${config.user ? `${config.user}:${config.password}@` : ''}${config.server || 'localhost'}:${config.port || 27017}/${config.database || ''}`;
+        const client = new MongoClient(uri);
+        await client.connect();
+        const db = client.db(config.database || 'admin');
+
+        return {
+            query: async (queryStr) => {
+                try {
+                    const req = JSON.parse(queryStr);
+                    if (req.collection && req.action === 'find') {
+                        const cursor = db.collection(req.collection).find(req.query || {});
+                        if (req.projection) cursor.project(req.projection);
+                        if (req.limit) cursor.limit(req.limit);
+                        else cursor.limit(100);
+                        return await cursor.toArray();
+                    } else if (req.action === 'aggregate') {
+                        return await db.collection(req.collection).aggregate(req.pipeline || []).toArray();
+                    } else if (req.action === 'listCollections') {
+                        return await db.listCollections().toArray();
+                    } else {
+                        return { message: "Unsupported MongoDB action natively in query, please use {collection, action: 'find'/'aggregate' ... }" };
+                    }
+                } catch (e) {
+                    if (typeof queryStr === 'string' && queryStr.trim() === 'ping') {
+                        await db.command({ ping: 1 });
+                        return [{ status: 'ok' }];
+                    }
+                    throw new Error('MongoDB query must be a valid JSON object specifying action and collection.');
+                }
+            },
+            close: async () => {
+                await client.close();
+            }
+        };
+    } else if (dbType === 'redis') {
+        const uri = config.connectionString || `redis://${config.user ? `:${config.password}@` : ''}${config.server || 'localhost'}:${config.port || 6379}`;
+        const redis = new Redis(uri);
+
+        return {
+            query: async (cmd) => {
+                const parts = cmd.trim().split(/\s+/);
+                if (parts.length > 0 && parts[0]) {
+                    const commandName = parts[0].toLowerCase();
+                    const args = parts.slice(1);
+                    if (typeof redis[commandName] === 'function') {
+                        const result = await redis[commandName](...args);
+                        return Array.isArray(result) ? result : [{ result }];
+                    } else {
+                        throw new Error(`Redis command ${commandName} not supported.`);
+                    }
+                }
+                return [];
+            },
+            close: async () => {
+                redis.disconnect();
             }
         };
     } else {

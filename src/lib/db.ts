@@ -1,6 +1,8 @@
 import mssql from 'mssql';
 import mysql from 'mysql2/promise';
 import { Pool as PgPool } from 'pg';
+import { MongoClient } from 'mongodb';
+import Redis from 'ioredis';
 
 export interface DbProxy {
   query: (sql: string) => Promise<any>;
@@ -16,6 +18,8 @@ export async function getDbProxy(config: any): Promise<DbProxy> {
     if (cs.startsWith('mysql:')) dbType = 'mysql';
     else if (cs.startsWith('mariadb:')) dbType = 'mariadb';
     else if (cs.startsWith('postgres:') || cs.startsWith('postgresql:')) dbType = 'postgres';
+    else if (cs.startsWith('mongodb:')) dbType = 'mongodb';
+    else if (cs.startsWith('redis:')) dbType = 'redis';
     else if (cs.startsWith('mssql:')) dbType = 'mssql';
   }
 
@@ -106,6 +110,73 @@ export async function getDbProxy(config: any): Promise<DbProxy> {
       },
       close: async () => {
         await pool.end();
+      }
+    };
+  } else if (dbType === 'mongodb') {
+    const uri = config.connectionString || `mongodb://${config.user ? `${config.user}:${config.password}@` : ''}${config.server || 'localhost'}:${config.port || 27017}/${config.database || ''}`;
+    const client = new MongoClient(uri);
+    await client.connect();
+    // Use the database from the connection or default to admin
+    const db = client.db(config.database || 'admin');
+
+    return {
+      query: async (queryStr: string) => {
+        // Execute arbitrary JavaScript or parse JSON
+        // Since we are building NoSQL Phase 3, we expect queries to be in the form of a JSON object for aggregations
+        // OR a specific command structure.
+        // For basic functionality, let's treat queryStr as a JSON string for a find operation on a collection.
+        // E.g., { "collection": "users", "action": "find", "query": {} }
+        try {
+          // If queryStr is JSON, parse and execute
+          const req = JSON.parse(queryStr);
+          if (req.collection && req.action === 'find') {
+            const cursor = db.collection(req.collection).find(req.query || {});
+            if (req.projection) cursor.project(req.projection);
+            if (req.limit) cursor.limit(req.limit);
+            else cursor.limit(100);
+            return await cursor.toArray();
+          } else if (req.action === 'aggregate') {
+            return await db.collection(req.collection).aggregate(req.pipeline || []).toArray();
+          } else if (req.action === 'listCollections') {
+            return await db.listCollections().toArray();
+          } else {
+            return { message: "Unsupported MongoDB action natively in query, please use {collection, action: 'find'/'aggregate' ... }" };
+          }
+        } catch (e) {
+          // Fallback: simple ping if it's just 'ping'
+          if (queryStr.trim() === 'ping') {
+            await db.command({ ping: 1 });
+            return [{ status: 'ok' }];
+          }
+          throw new Error('MongoDB query must be a valid JSON object specifying action and collection.');
+        }
+      },
+      close: async () => {
+        await client.close();
+      }
+    };
+  } else if (dbType === 'redis') {
+    const uri = config.connectionString || `redis://${config.user ? `:${config.password}@` : ''}${config.server || 'localhost'}:${config.port || 6379}`;
+    const redis = new Redis(uri);
+
+    return {
+      query: async (cmd: string) => {
+        // Simple CLI emulation
+        const parts = cmd.trim().split(/\s+/);
+        if (parts.length > 0 && parts[0]) {
+          const commandName = parts[0].toLowerCase();
+          const args = parts.slice(1);
+          if (typeof (redis as any)[commandName] === 'function') {
+            const result = await (redis as any)[commandName](...args);
+            return Array.isArray(result) ? result : [{ result }];
+          } else {
+            throw new Error(`Redis command ${commandName} not supported.`);
+          }
+        }
+        return [];
+      },
+      close: async () => {
+        redis.disconnect();
       }
     };
   } else {
