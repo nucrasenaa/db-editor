@@ -14,7 +14,8 @@ import {
     Zap,
     Terminal,
     ChevronRight,
-    Loader2
+    Loader2,
+    RotateCcw
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -58,6 +59,8 @@ export default function ServerMonitor({ config, onClose }: ServerMonitorProps) {
     const [currentLog, setCurrentLog] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState<'dashboard' | 'logs' | 'waits'>('dashboard');
     const [logSearch, setLogSearch] = useState('');
+    const [logError, setLogError] = useState<string | null>(null);
+    const [logsLoading, setLogsLoading] = useState(false);
 
     const fetchData = useCallback(async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true);
@@ -113,7 +116,7 @@ export default function ServerMonitor({ config, onClose }: ServerMonitorProps) {
 
                 const res = await apiRequest('/api/db/query', 'POST', { config, query: batchQuery });
 
-                if (res.success && res.isMultiSet) {
+                if (res.success && res.isMultiSet && res.resultSets?.length >= 4) {
                     const cpu = res.resultSets[0].data[0] || {};
                     const memory = res.resultSets[1].data[0] || {};
 
@@ -136,19 +139,37 @@ export default function ServerMonitor({ config, onClose }: ServerMonitorProps) {
         }
     }, [config]);
 
-    const fetchLogs = async () => {
+    const fetchLogs = useCallback(async () => {
+        const dialect = config?.dbType || 'mssql';
+        if (dialect !== 'mssql') return;
+
+        setLogsLoading(true);
+        setLogError(null);
         try {
+            // Use NULL if search is empty for better compatibility
+            const searchParam = logSearch.trim() ? `'${logSearch.replace(/'/g, "''")}'` : 'NULL';
             const res = await apiRequest('/api/db/query', 'POST', {
                 config,
-                query: `EXEC sys.xp_readerrorlog 0, 1, '${logSearch}';`
+                query: `
+                    DECLARE @st datetime = DATEADD(day, -7, GETDATE());
+                    EXEC master.sys.xp_readerrorlog 0, 1, ${searchParam}, NULL, @st;
+                `
             });
+
             if (res.success) {
                 setCurrentLog(res.data || []);
+            } else {
+                setLogError(res.message || 'Failed to fetch logs. Ensure you have sysadmin permissions.');
+                setCurrentLog([]);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('[Monitor] Error fetching logs:', err);
+            setLogError(err.message || 'An unexpected error occurred while fetching logs.');
+            setCurrentLog([]);
+        } finally {
+            setLogsLoading(false);
         }
-    };
+    }, [config, logSearch]);
 
     useEffect(() => {
         fetchData();
@@ -158,7 +179,7 @@ export default function ServerMonitor({ config, onClose }: ServerMonitorProps) {
 
     useEffect(() => {
         if (activeTab === 'logs') fetchLogs();
-    }, [activeTab]);
+    }, [activeTab, fetchLogs]);
 
     return (
         <div className="flex-1 flex flex-col bg-background overflow-hidden animate-in fade-in zoom-in-95 duration-300">
@@ -326,20 +347,25 @@ export default function ServerMonitor({ config, onClose }: ServerMonitorProps) {
                                     <div className="bg-card border border-border rounded-2xl p-6">
                                         <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-6">Cumulative Waits (ms)</h4>
                                         <div className="space-y-4">
-                                            {waitStats.map(wait => (
-                                                <div key={wait.wait_type} className="space-y-2">
-                                                    <div className="flex justify-between items-center text-[10px] font-mono">
-                                                        <span className="font-bold text-foreground">{wait.wait_type}</span>
-                                                        <span className="text-muted-foreground">{wait.wait_time_ms.toLocaleString()} ms</span>
+                                            {waitStats.map(wait => {
+                                                const maxWait = waitStats[0]?.wait_time_ms || 1;
+                                                const percentage = Math.min(100, (wait.wait_time_ms / maxWait) * 100);
+
+                                                return (
+                                                    <div key={wait.wait_type} className="space-y-2">
+                                                        <div className="flex justify-between items-center text-[10px] font-mono">
+                                                            <span className="font-bold text-foreground">{wait.wait_type}</span>
+                                                            <span className="text-muted-foreground">{(wait.wait_time_ms || 0).toLocaleString()} ms</span>
+                                                        </div>
+                                                        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                                            <div
+                                                                className="h-full bg-amber-500 rounded-full"
+                                                                style={{ width: `${percentage}%` }}
+                                                            />
+                                                        </div>
                                                     </div>
-                                                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                                                        <div
-                                                            className="h-full bg-amber-500 rounded-full"
-                                                            style={{ width: `${Math.min(100, (wait.wait_time_ms / waitStats[0].wait_time_ms) * 100)}%` }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                     <div className="space-y-4">
@@ -365,7 +391,10 @@ export default function ServerMonitor({ config, onClose }: ServerMonitorProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <Search className="w-4 h-4 text-blue-500" />
-                                        <h3 className="text-xs font-black uppercase tracking-widest">SQL Server Error Log</h3>
+                                        <h3 className="text-xs font-black uppercase tracking-widest whitespace-nowrap">SQL Server Error Log</h3>
+                                        <div className="px-2 py-0.5 bg-blue-500/10 text-blue-500 rounded text-[8px] font-black uppercase tracking-widest border border-blue-500/20">
+                                            Last 7 Days
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="relative w-64">
@@ -389,22 +418,55 @@ export default function ServerMonitor({ config, onClose }: ServerMonitorProps) {
                                 </div>
 
                                 <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-2xl h-[600px] flex flex-col">
-                                    <div className="flex-1 overflow-auto p-4 font-mono text-[11px] space-y-2 bg-[#1a1a1e]">
-                                        {currentLog.length === 0 ? (
+                                    <div className="flex-1 overflow-auto p-4 font-mono text-[11px] space-y-2 bg-[#1a1a1e] relative">
+                                        {config?.dbType && config.dbType !== 'mssql' ? (
+                                            <div className="h-full flex flex-col items-center justify-center opacity-50 px-8 text-center">
+                                                <AlertCircle className="w-12 h-12 mb-4 text-amber-500" />
+                                                <span className="uppercase tracking-[0.2em] font-black text-amber-500 mb-2">Not Supported</span>
+                                                <p className="text-[10px] text-muted-foreground uppercase leading-relaxed">
+                                                    SQL Server Error Log monitoring is currently only available for MSSQL connections.
+                                                </p>
+                                            </div>
+                                        ) : logsLoading ? (
+                                            <div className="h-full flex flex-col items-center justify-center opacity-50">
+                                                <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-4" />
+                                                <span className="uppercase tracking-[0.2em]">Synchronizing Logs...</span>
+                                            </div>
+                                        ) : logError ? (
+                                            <div className="h-full flex flex-col items-center justify-center p-8 text-center">
+                                                <AlertCircle className="w-12 h-12 mb-4 text-red-500" />
+                                                <span className="uppercase tracking-[0.2em] font-black text-red-500 mb-2">Access Denied / Error</span>
+                                                <p className="text-[10px] text-red-400 font-bold uppercase mb-6 max-w-md bg-red-500/10 p-4 rounded-xl border border-red-500/20">
+                                                    {logError}
+                                                </p>
+                                                <button
+                                                    onClick={fetchLogs}
+                                                    className="flex items-center gap-2 px-6 py-2 bg-muted hover:bg-muted/80 text-foreground text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-border"
+                                                >
+                                                    <RotateCcw className="w-3.5 h-3.5" /> Re-attempt Connection
+                                                </button>
+                                            </div>
+                                        ) : currentLog.length === 0 ? (
                                             <div className="h-full flex flex-col items-center justify-center opacity-30">
                                                 <Terminal className="w-12 h-12 mb-4" />
-                                                <span className="uppercase tracking-[0.2em]">No logs loaded</span>
+                                                <span className="uppercase tracking-[0.2em] font-black">Memory Empty / No logs found</span>
                                             </div>
                                         ) : (
-                                            currentLog.map((log, i) => (
-                                                <div key={i} className="flex gap-4 p-2 hover:bg-white/5 rounded transition-colors group border-b border-white/[0.03] last:border-0">
-                                                    <span className="text-muted-foreground w-40 shrink-0">{new Date(log.LogDate).toLocaleString()}</span>
-                                                    <span className="text-amber-500 w-24 shrink-0 font-bold uppercase">{log.ProcessInfo}</span>
-                                                    <span className={cn("flex-1 text-foreground/80 group-hover:text-foreground", log.Text.toLowerCase().includes('error') && "text-red-400")}>
-                                                        {log.Text}
-                                                    </span>
-                                                </div>
-                                            ))
+                                            currentLog.map((log, i) => {
+                                                const logDate = log.LogDate || log.logDate || log.log_date;
+                                                const processInfo = log.ProcessInfo || log.processInfo || log.process_info || 'SYSTEM';
+                                                const text = log.Text || log.text || log.Message || log.message || '';
+
+                                                return (
+                                                    <div key={i} className="flex gap-4 p-2 hover:bg-white/5 rounded transition-colors group border-b border-white/[0.03] last:border-0">
+                                                        <span className="text-muted-foreground w-40 shrink-0">{logDate ? new Date(logDate).toLocaleString() : 'N/A'}</span>
+                                                        <span className="text-amber-500 w-24 shrink-0 font-bold uppercase truncate">{processInfo}</span>
+                                                        <span className={cn("flex-1 text-foreground/80 group-hover:text-foreground break-words", text.toLowerCase().includes('error') && "text-red-400")}>
+                                                            {text}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })
                                         )}
                                     </div>
                                 </div>

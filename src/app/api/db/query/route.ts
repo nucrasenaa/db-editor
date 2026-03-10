@@ -38,8 +38,9 @@ export async function POST(req: NextRequest) {
             // We split by ';' but also check the start of the whole string after trimming
             const statements = noCommentsQuery.split(';').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
 
-            // Words that alter data or schema
-            const destructiveWords = /^(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|MERGE|GRANT|REVOKE|EXEC|EXECUTE|RENAME|COMMENT)\b/i;
+            // Words that alter data or schema. We except xp_readerrorlog because it's a read-only diagnostic task.
+            // We also allow INSERT INTO @ because table variables are safe for read-only sessions.
+            const destructiveWords = /^(INSERT(?! INTO @)|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|MERGE|GRANT|REVOKE|EXEC(?!UTE?\s+(master\.|sys\.)?(sys\.)?xp_readerrorlog)|RENAME|COMMENT)\b/i;
 
             const hasDestructive = statements.some((stmt: string) => destructiveWords.test(stmt));
             if (hasDestructive || destructiveWords.test(noCommentsQuery)) {
