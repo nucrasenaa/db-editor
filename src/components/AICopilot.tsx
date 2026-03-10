@@ -99,11 +99,11 @@ export default function AICopilot({ onClose, onGenerated, metadata, config }: AI
 
     return (
         <div className={cn(
-            "absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-card/95 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-2 shadow-2xl animate-in fade-in duration-200",
-            generatedSql ? "w-[700px] slide-in-from-top-2" : "w-[600px] slide-in-from-top-4"
+            "absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-card/95 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-2 shadow-2xl animate-in fade-in duration-200 flex flex-col max-h-[calc(100%-2rem)]",
+            generatedSql ? "w-[95%] max-w-[700px] slide-in-from-top-2" : "w-[95%] max-w-[600px] slide-in-from-top-4"
         )}>
             {!generatedSql ? (
-                <div className="flex items-center gap-3 px-3 py-2">
+                <div className="flex items-center gap-3 px-3 py-2 shrink-0">
                     <div className="relative">
                         <div className="absolute -inset-1 bg-purple-500/20 rounded-lg blur-sm animate-pulse" />
                         <Sparkles className="relative w-5 h-5 text-purple-400" />
@@ -143,31 +143,33 @@ export default function AICopilot({ onClose, onGenerated, metadata, config }: AI
                     </div>
                 </div>
             ) : (
-                <div className="p-4 space-y-4 animate-in fade-in zoom-in-95 duration-200">
-                    <div className="flex items-center justify-between border-b border-border/20 pb-2">
-                        <div className="flex items-center gap-2">
-                            <ShieldCheck className={cn("w-4 h-4", safety?.isSafe ? "text-emerald-400" : "text-amber-400")} />
-                            <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Review Generated SQL</h3>
+                <>
+                    <div className="flex-1 p-4 space-y-4 animate-in fade-in zoom-in-95 duration-200 overflow-y-auto custom-scrollbar">
+                        <div className="flex items-center justify-between border-b border-border/20 pb-2">
+                            <div className="flex items-center gap-2">
+                                <ShieldCheck className={cn("w-4 h-4", safety?.isSafe ? "text-emerald-400" : "text-amber-400")} />
+                                <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Review Generated SQL</h3>
+                            </div>
+                            <button onClick={() => setGeneratedSql(null)} className="text-[10px] font-black uppercase tracking-widest text-purple-400 hover:text-purple-300 transition-colors">← Back to Prompt</button>
                         </div>
-                        <button onClick={() => setGeneratedSql(null)} className="text-[10px] font-black uppercase tracking-widest text-purple-400 hover:text-purple-300 transition-colors">← Back to Prompt</button>
+
+                        <div className="bg-muted/30 border border-border/50 rounded-xl p-4 max-h-[400px] overflow-auto custom-scrollbar">
+                            <pre className="text-xs font-mono text-foreground whitespace-pre-wrap leading-relaxed">
+                                {generatedSql}
+                            </pre>
+                        </div>
+
+                        {!safety?.isSafe && (
+                            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3">
+                                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
+                                <p className="text-[11px] text-amber-400/80 font-bold leading-relaxed">
+                                    This query performs a <span className="text-amber-500 underline font-black">{safety?.type}</span> operation. Please review carefully before executing.
+                                </p>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="bg-muted/30 border border-border/50 rounded-xl p-4 max-h-[300px] overflow-auto custom-scrollbar">
-                        <pre className="text-xs font-mono text-foreground whitespace-pre-wrap leading-relaxed">
-                            {generatedSql}
-                        </pre>
-                    </div>
-
-                    {!safety?.isSafe && (
-                        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3">
-                            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
-                            <p className="text-[11px] text-amber-400/80 font-bold leading-relaxed">
-                                This query performs a <span className="text-amber-500 underline font-black">{safety?.type}</span> operation. Please review carefully before executing.
-                            </p>
-                        </div>
-                    )}
-
-                    <div className="flex items-center justify-end gap-3 pt-2">
+                    <div className="flex items-center justify-end gap-3 p-4 pt-2 border-t border-border/20 shrink-0">
                         <button
                             onClick={onClose}
                             className="px-6 py-2 bg-muted hover:bg-muted/80 text-foreground text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
@@ -192,7 +194,7 @@ export default function AICopilot({ onClose, onGenerated, metadata, config }: AI
                             Insert & Execute
                         </button>
                     </div>
-                </div>
+                </>
             )}
 
             {!generatedSql && (
