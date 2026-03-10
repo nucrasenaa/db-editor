@@ -140,6 +140,17 @@ export default function UserManager({ config, onClose }: UserManagerProps) {
         }
     };
 
+    const dialect = config?.dbType || 'mssql';
+    const esc = (s: string) => s.replace(/'/g, dialect === 'mssql' ? "''" : "\\'");
+    const escId = (s: string) => {
+        if (dialect === 'mssql') {
+            if (s.startsWith('[') && s.endsWith(']')) return s;
+            return `[${s.replace(/]/g, ']]')}]`;
+        }
+        if (dialect === 'postgres') return `"${s.replace(/"/g, '""')}"`;
+        return `\`${s.replace(/`/g, '``')}\``;
+    };
+
     useEffect(() => {
         fetchUsers(false, selectedDb);
     }, [fetchUsers, selectedDb]);
@@ -152,29 +163,38 @@ export default function UserManager({ config, onClose }: UserManagerProps) {
 
         setActionLoading(true);
         try {
-            const dialect = config?.dbType || 'mssql';
-            let query = '';
-
             if (dialect === 'mssql') {
-                query = `
-                    CREATE LOGIN [${newUser.name}] WITH PASSWORD = '${newUser.password}';
-                    USE [${selectedDb}];
-                    CREATE USER [${newUser.name}] FOR LOGIN [${newUser.name}];
-                `;
-            } else if (dialect === 'postgres') {
-                query = `CREATE ROLE "${newUser.name}" WITH LOGIN PASSWORD '${newUser.password}';`;
-            } else {
-                query = `CREATE USER '${newUser.name}'@'%' IDENTIFIED BY '${newUser.password}';`;
-            }
+                // Step 1: Create Login (Server level)
+                const loginQuery = `CREATE LOGIN ${escId(newUser.name)} WITH PASSWORD = '${esc(newUser.password)}';`;
+                const res1 = await apiRequest('/api/db/query', 'POST', { config, query: loginQuery });
+                if (!res1.success) throw new Error(res1.message || 'Failed to create login');
 
-            const res = await apiRequest('/api/db/query', 'POST', { config, query });
-            if (res.success) {
+                // Step 2: Create User (Database level)
+                const userQuery = `CREATE USER ${escId(newUser.name)} FOR LOGIN ${escId(newUser.name)};`;
+                const res2 = await apiRequest('/api/db/query', 'POST', { config: { ...config, database: selectedDb }, query: userQuery });
+                if (!res2.success) throw new Error(res2.message || 'Failed to create user in database');
+
                 alert(`User ${newUser.name} created successfully`);
                 setShowAddUser(false);
                 setNewUser({ name: '', password: '' });
                 fetchUsers(true);
             } else {
-                alert(res.error || 'Failed to create user');
+                let query = '';
+                if (dialect === 'postgres') {
+                    query = `CREATE ROLE ${escId(newUser.name)} WITH LOGIN PASSWORD '${esc(newUser.password)}';`;
+                } else {
+                    query = `CREATE USER ${escId(newUser.name)}@'%' IDENTIFIED BY '${esc(newUser.password)}';`;
+                }
+
+                const res = await apiRequest('/api/db/query', 'POST', { config, query });
+                if (res.success) {
+                    alert(`User ${newUser.name} created successfully`);
+                    setShowAddUser(false);
+                    setNewUser({ name: '', password: '' });
+                    fetchUsers(true);
+                } else {
+                    alert(res.message || 'Failed to create user');
+                }
             }
         } catch (err: any) {
             alert(err.message || 'Error occurred');
@@ -188,28 +208,30 @@ export default function UserManager({ config, onClose }: UserManagerProps) {
 
         setActionLoading(true);
         try {
-            const dialect = config?.dbType || 'mssql';
-            let query = '';
-
             if (dialect === 'mssql') {
-                query = `
-                    USE [${selectedDb}];
-                    IF EXISTS (SELECT * FROM sys.database_principals WHERE name = '${userName}') DROP USER [${userName}];
-                    IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '${userName}') DROP LOGIN [${userName}];
-                `;
-            } else if (dialect === 'postgres') {
-                query = `DROP ROLE "${userName}";`;
-            } else {
-                query = `DROP USER '${userName}';`;
-            }
+                const userQuery = `IF EXISTS (SELECT * FROM sys.database_principals WHERE name = '${userName.replace(/'/g, "''")}') DROP USER ${escId(userName)};`;
+                const res1 = await apiRequest('/api/db/query', 'POST', { config: { ...config, database: selectedDb }, query: userQuery });
 
-            const res = await apiRequest('/api/db/query', 'POST', { config, query });
-            if (res.success) {
-                alert(`User ${userName} deleted`);
-                if (selectedUser?.userName === userName) setSelectedUser(null);
-                fetchUsers(true);
+                const loginQuery = `IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '${userName.replace(/'/g, "''")}') DROP LOGIN ${escId(userName)};`;
+                const res2 = await apiRequest('/api/db/query', 'POST', { config, query: loginQuery });
+
+                if (res1.success || res2.success) {
+                    alert('User/Login deleted');
+                    if (selectedUser?.userName === userName) setSelectedUser(null);
+                    fetchUsers(true);
+                } else {
+                    alert(res1.message || res2.message || 'Failed to delete');
+                }
             } else {
-                alert(res.error || 'Failed to delete user');
+                const query = dialect === 'postgres' ? `DROP ROLE ${escId(userName)};` : `DROP USER ${escId(userName)}@'%';`;
+                const res = await apiRequest('/api/db/query', 'POST', { config, query });
+                if (res.success) {
+                    alert('User deleted');
+                    if (selectedUser?.userName === userName) setSelectedUser(null);
+                    fetchUsers(true);
+                } else {
+                    alert(res.message || 'Failed to delete');
+                }
             }
         } catch (err: any) {
             alert(err.message || 'Error occurred');
@@ -223,22 +245,21 @@ export default function UserManager({ config, onClose }: UserManagerProps) {
 
         setActionLoading(true);
         try {
-            const dialect = config?.dbType || 'mssql';
             let query = '';
-
             if (dialect === 'mssql') {
-                query = `USE [${selectedDb}]; GRANT ${newPerm.permission} ${newPerm.object ? `ON ${newPerm.object}` : ''} TO [${selectedUser.userName}];`;
+                query = `GRANT ${newPerm.permission} ${newPerm.object ? `ON ${newPerm.object}` : ''} TO ${escId(selectedUser.userName)};`;
             } else if (dialect === 'postgres') {
                 query = `GRANT ${newPerm.permission} ON ${newPerm.object || 'DATABASE "' + selectedDb + '"'} TO "${selectedUser.userName}";`;
             }
 
-            const res = await apiRequest('/api/db/query', 'POST', { config, query });
+            const res = await apiRequest('/api/db/query', 'POST', { config: { ...config, database: selectedDb }, query });
             if (res.success) {
                 alert('Permission granted');
                 setShowGrantPerm(false);
+                setNewPerm({ ...newPerm, object: '' });
                 fetchUserDetails(selectedUser);
             } else {
-                alert(res.error || 'Failed to grant permission');
+                alert(res.message || 'Failed to grant permission');
             }
         } catch (err: any) {
             alert(err.message || 'Error occurred');
@@ -252,23 +273,22 @@ export default function UserManager({ config, onClose }: UserManagerProps) {
 
         setActionLoading(true);
         try {
-            const dialect = config?.dbType || 'mssql';
             let query = '';
             const pName = perm.permission || perm.privilege_type;
             const objName = perm.objectName || perm.table_name;
 
             if (dialect === 'mssql') {
-                query = `USE [${selectedDb}]; REVOKE ${pName} ${objName ? `ON [${objName}]` : ''} FROM [${selectedUser.userName}];`;
+                query = `REVOKE ${pName} ${objName ? `ON ${objName}` : ''} FROM ${escId(selectedUser.userName)};`;
             } else if (dialect === 'postgres') {
                 query = `REVOKE ${pName} ON ${objName ? `TABLE "${objName}"` : 'DATABASE "' + selectedDb + '"'} FROM "${selectedUser.userName}";`;
             }
 
-            const res = await apiRequest('/api/db/query', 'POST', { config, query });
+            const res = await apiRequest('/api/db/query', 'POST', { config: { ...config, database: selectedDb }, query });
             if (res.success) {
                 alert('Permission revoked');
                 fetchUserDetails(selectedUser);
             } else {
-                alert(res.error || 'Failed to revoke permission');
+                alert(res.message || 'Failed to revoke permission');
             }
         } catch (err: any) {
             alert(err.message || 'Error occurred');
@@ -282,15 +302,13 @@ export default function UserManager({ config, onClose }: UserManagerProps) {
 
         setActionLoading(true);
         try {
-            const dialect = config?.dbType || 'mssql';
             let query = '';
-
             if (dialect === 'mssql') {
-                query = `ALTER LOGIN [${selectedUser.userName}] WITH PASSWORD = '${newPass}';`;
+                query = `ALTER LOGIN ${escId(selectedUser.userName)} WITH PASSWORD = '${esc(newPass)}';`;
             } else if (dialect === 'postgres') {
-                query = `ALTER ROLE "${selectedUser.userName}" WITH PASSWORD '${newPass}';`;
+                query = `ALTER ROLE "${selectedUser.userName}" WITH PASSWORD '${esc(newPass)}';`;
             } else {
-                query = `ALTER USER '${selectedUser.userName}'@'%' IDENTIFIED BY '${newPass}';`;
+                query = `ALTER USER ${escId(selectedUser.userName)}@'%' IDENTIFIED BY '${esc(newPass)}';`;
             }
 
             const res = await apiRequest('/api/db/query', 'POST', { config, query });
@@ -299,7 +317,7 @@ export default function UserManager({ config, onClose }: UserManagerProps) {
                 setShowResetPassword(false);
                 setNewPass('');
             } else {
-                alert(res.error || 'Failed to reset password');
+                alert(res.message || 'Failed to reset password');
             }
         } catch (err: any) {
             alert(err.message || 'Error occurred');
@@ -308,7 +326,7 @@ export default function UserManager({ config, onClose }: UserManagerProps) {
         }
     };
 
-    const filteredUsers = users.filter(u =>
+    const filteredUsers = users.filter((u: any) =>
         u.userName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
