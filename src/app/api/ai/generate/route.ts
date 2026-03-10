@@ -14,6 +14,7 @@ export async function POST(req: Request) {
 
         const isMongo = dbType === 'mongodb';
         const isRedis = dbType === 'redis';
+        const isKafka = dbType === 'kafka';
 
         let systemPrompt = '';
         if (isMongo) {
@@ -40,6 +41,21 @@ Generate a valid Redis CLI command based on the request.
 Rules:
 1. ONLY return the raw Redis command. No markdown formatting, no explanations.
 2. Examples: GET mykey, SET mykey "value", KEYS *, HGETALL user:1000
+`;
+        } else if (isKafka) {
+            systemPrompt = `
+You are an expert Kafka Event Streaming Generator.
+Generate a valid JSON object representing a Kafka action based on the request.
+
+Rules:
+1. ONLY return the JSON object. No markdown formatting, no explanations.
+2. Your response MUST be valid JSON format that matches our application's expected format:
+   For consuming messages:
+   { "action": "consume", "topic": "topic_name", "limit": 50, "fromBeginning": false }
+   For publishing messages:
+   { "action": "publish", "topic": "topic_name", "messages": [{"value": "hello"}] }
+   For listing topics:
+   { "action": "listTopics" }
 `;
         } else {
             systemPrompt = `

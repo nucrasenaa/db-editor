@@ -3,6 +3,7 @@ import mysql from 'mysql2/promise';
 import { Pool as PgPool } from 'pg';
 import { MongoClient } from 'mongodb';
 import Redis from 'ioredis';
+import { Kafka } from 'kafkajs';
 
 export interface DbProxy {
   query: (sql: string) => Promise<any>;
@@ -20,6 +21,7 @@ export async function getDbProxy(config: any): Promise<DbProxy> {
     else if (cs.startsWith('postgres:') || cs.startsWith('postgresql:')) dbType = 'postgres';
     else if (cs.startsWith('mongodb:')) dbType = 'mongodb';
     else if (cs.startsWith('redis:')) dbType = 'redis';
+    else if (cs.startsWith('kafka:')) dbType = 'kafka';
     else if (cs.startsWith('mssql:')) dbType = 'mssql';
   }
 
@@ -177,6 +179,96 @@ export async function getDbProxy(config: any): Promise<DbProxy> {
       },
       close: async () => {
         redis.disconnect();
+      }
+    };
+  } else if (dbType === 'kafka') {
+    const broker = config.connectionString
+      ? config.connectionString.replace('kafka://', '')
+      : `${config.server || 'localhost'}:${config.port || 9092}`;
+
+    const kafka = new Kafka({
+      clientId: config.name || 'data-forge-client',
+      brokers: [broker],
+      ssl: config.options?.encrypt ? true : false,
+      sasl: config.user && config.password ? {
+        mechanism: 'plain',
+        username: config.user,
+        password: config.password
+      } : undefined
+    });
+
+    const admin = kafka.admin();
+    await admin.connect();
+
+    return {
+      query: async (queryStr: string) => {
+        try {
+          const req = JSON.parse(queryStr);
+          if (req.action === 'listTopics') {
+            const topics = await admin.listTopics();
+            // Filter out internal topics if needed, but returning all for now
+            return topics.map(t => ({ topic: t }));
+          } else if (req.action === 'consume' && req.topic) {
+            const consumer = kafka.consumer({ groupId: `df-group-${Date.now()}` });
+            await consumer.connect();
+            await consumer.subscribe({ topic: req.topic, fromBeginning: req.fromBeginning || false });
+
+            const messages: any[] = [];
+            const limit = req.limit || 50;
+
+            return new Promise(async (resolve, reject) => {
+              const timeout = setTimeout(async () => {
+                await consumer.disconnect();
+                resolve(messages);
+              }, 5000); // Wait up to 5s for messages
+
+              try {
+                await consumer.run({
+                  eachMessage: async ({ topic, partition, message }) => {
+                    messages.push({
+                      topic,
+                      partition,
+                      offset: message.offset,
+                      key: message.key ? message.key.toString() : null,
+                      value: message.value ? message.value.toString() : null,
+                      timestamp: message.timestamp
+                    });
+
+                    if (messages.length >= limit) {
+                      clearTimeout(timeout);
+                      await consumer.disconnect();
+                      resolve(messages);
+                    }
+                  },
+                });
+              } catch (err) {
+                clearTimeout(timeout);
+                await consumer.disconnect();
+                reject(err);
+              }
+            });
+          } else if (req.action === 'publish' && req.topic && req.messages) {
+            const producer = kafka.producer();
+            await producer.connect();
+            await producer.send({
+              topic: req.topic,
+              messages: Array.isArray(req.messages) ? req.messages : [req.messages],
+            });
+            await producer.disconnect();
+            return [{ status: 'success', published: true }];
+          } else {
+            return { error: 'Unknown Kafka action. Use listTopics, consume, or publish.' };
+          }
+        } catch (e: any) {
+          if (queryStr === 'ping') {
+            const topics = await admin.listTopics();
+            return [{ status: 'ok', topics: topics.length }];
+          }
+          throw new Error(`Kafka query must be a valid JSON object: ${e.message}`);
+        }
+      },
+      close: async () => {
+        await admin.disconnect();
       }
     };
   } else {

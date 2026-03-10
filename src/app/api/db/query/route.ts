@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
             const isMultiStatement = queryToExec.trim().split(';').filter((s: string) => s.trim().length > 0).length > 1;
 
             // Apply pagination logic for SINGLE SELECT queries only (skip for NoSQL)
-            if (dialect !== 'mongodb' && dialect !== 'redis' && !isExplain && !isMultiStatement && isSelect && !queryToExec.toUpperCase().includes('OFFSET') && !queryToExec.toUpperCase().includes('LIMIT') && !queryToExec.toUpperCase().includes('GROUP BY')) {
+            if (dialect !== 'mongodb' && dialect !== 'redis' && dialect !== 'kafka' && !isExplain && !isMultiStatement && isSelect && !queryToExec.toUpperCase().includes('OFFSET') && !queryToExec.toUpperCase().includes('LIMIT') && !queryToExec.toUpperCase().includes('GROUP BY')) {
                 const offset = (page - 1) * pageSize;
 
                 // Clean up base query

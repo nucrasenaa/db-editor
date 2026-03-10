@@ -37,6 +37,20 @@ export async function POST(req: NextRequest) {
                         synonyms: []
                     }
                 });
+            } else if (dialect === 'kafka') {
+                const topicsResult = await dbProxy.query(JSON.stringify({ action: 'listTopics' }));
+                return NextResponse.json({
+                    success: true,
+                    database: targetDb || 'Kafka Cluster',
+                    metadata: {
+                        databases: [{ name: targetDb || 'Kafka Cluster' }],
+                        schemas: [{ name: 'topics' }],
+                        tables: Array.isArray(topicsResult) ? topicsResult.map((t: any) => ({ name: t.topic, schema: 'topics', fullName: t.topic })) : [],
+                        views: [],
+                        procedures: [],
+                        synonyms: []
+                    }
+                });
             } else if (dialect === 'mysql' || dialect === 'mariadb' || dialect === 'postgres') {
                 const queries = dialect === 'postgres' ? {
                     databases: `SELECT datname as name FROM pg_database WHERE datistemplate = false AND datname != 'postgres'`,

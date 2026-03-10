@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
             const dialect = config.dbType || 'mssql';
             let script = '';
 
-            if (dialect === 'mongodb' || dialect === 'redis') {
-                return NextResponse.json({ success: false, message: 'DDL is not supported for NoSQL databases.' });
+            if (dialect === 'mongodb' || dialect === 'redis' || dialect === 'kafka') {
+                return NextResponse.json({ success: false, message: 'DDL is not supported for NoSQL / Streaming datastores.' });
             }
 
             if (dialect === 'mssql') {

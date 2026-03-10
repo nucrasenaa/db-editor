@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
         const dbProxy = await getDbProxy({ ...config, dbType: dialect });
 
         try {
-            if (dialect === 'mongodb' || dialect === 'redis') {
+            if (dialect === 'mongodb' || dialect === 'redis' || dialect === 'kafka') {
                 return NextResponse.json({
                     success: true,
                     columns: []

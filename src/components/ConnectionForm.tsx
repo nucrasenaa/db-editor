@@ -109,6 +109,7 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
         { id: 'postgres', label: 'Postgres', icon: Database, color: 'text-indigo-500', defaultPort: 5432, disabled: false },
         { id: 'mongodb', label: 'MongoDB', icon: Database, color: 'text-green-500', defaultPort: 27017, disabled: false },
         { id: 'redis', label: 'Redis', icon: Database, color: 'text-red-500', defaultPort: 6379, disabled: false },
+        { id: 'kafka', label: 'Kafka', icon: Database, color: 'text-purple-500', defaultPort: 9092, disabled: false },
     ];
 
     return (
@@ -261,127 +262,204 @@ export default function ConnectionForm({ onConnect, onCancel, initialConfig }: C
 
                         {connMode === 'manual' ? (
                             <>
-                                <div className="grid grid-cols-4 gap-4">
-                                    <div className="col-span-3 space-y-2">
+                                {config.dbType !== 'kafka' && (
+                                    <div className="grid grid-cols-4 gap-4">
+                                        <div className="col-span-3 space-y-2">
+                                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                                                Host
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                className="w-full bg-muted/50 border border-border/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm"
+                                                placeholder="localhost or server-address"
+                                                value={config.server}
+                                                onChange={(e) => setConfig({ ...config, server: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="col-span-1 space-y-2">
+                                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                                                Port
+                                            </label>
+                                            <input
+                                                type="number"
+                                                required
+                                                className="w-full bg-muted/50 border border-border/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm"
+                                                value={config.port}
+                                                onChange={(e) => setConfig({ ...config, port: parseInt(e.target.value) })}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {config.dbType === 'kafka' && (
+                                    <>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                                                Bootstrap Servers
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                className="w-full bg-muted/50 border border-border/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm"
+                                                placeholder="localhost:9092, broker2:9092"
+                                                value={`${config.server}:${config.port}`}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    const [firstBroker] = val.split(',');
+                                                    const [host, port] = (firstBroker || '').split(':');
+                                                    setConfig({ ...config, server: host || val, port: parseInt(port) || 9092 });
+                                                }}
+                                            />
+                                            <p className="text-[10px] text-muted-foreground/60 italic px-1 mt-1">
+                                                Comma separated list of brokers (e.g., localhost:9092, localhost:9093)
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                                                    SASL Username (Optional)
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-muted/50 border border-border/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm"
+                                                    placeholder="Username"
+                                                    value={config.user}
+                                                    onChange={(e) => setConfig({ ...config, user: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                                                    SASL Password (Optional)
+                                                </label>
+                                                <input
+                                                    type="password"
+                                                    className="w-full bg-muted/50 border border-border/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm"
+                                                    placeholder="••••••••"
+                                                    value={config.password}
+                                                    onChange={(e) => setConfig({ ...config, password: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 px-1">
+                                            <input
+                                                type="checkbox"
+                                                id="ssl"
+                                                className="w-4 h-4 rounded border-border bg-muted/50 text-accent focus:ring-accent"
+                                                checked={config.options.encrypt}
+                                                onChange={(e) => setConfig({
+                                                    ...config,
+                                                    options: { ...config.options, encrypt: e.target.checked }
+                                                })}
+                                            />
+                                            <label htmlFor="ssl" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider cursor-pointer select-none">
+                                                Require SSL
+                                            </label>
+                                        </div>
+                                    </>
+                                )}
+
+                                {config.dbType !== 'kafka' && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                                                Username
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                className="w-full bg-muted/50 border border-border/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm"
+                                                placeholder="sa"
+                                                value={config.user}
+                                                onChange={(e) => setConfig({ ...config, user: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                                                Password
+                                            </label>
+                                            <input
+                                                type="password"
+                                                className="w-full bg-muted/50 border border-border/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm"
+                                                placeholder="••••••••"
+                                                value={config.password}
+                                                onChange={(e) => setConfig({ ...config, password: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {config.dbType !== 'kafka' && config.dbType !== 'redis' && config.dbType !== 'mongodb' && (
+                                    <div className="space-y-2">
                                         <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
-                                            Host
+                                            Initial Database
                                         </label>
                                         <input
                                             type="text"
                                             required
                                             className="w-full bg-muted/50 border border-border/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm"
-                                            placeholder="localhost or server-address"
-                                            value={config.server}
-                                            onChange={(e) => setConfig({ ...config, server: e.target.value })}
+                                            placeholder="master"
+                                            value={config.database}
+                                            onChange={(e) => setConfig({ ...config, database: e.target.value })}
                                         />
                                     </div>
-                                    <div className="col-span-1 space-y-2">
-                                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
-                                            Port
-                                        </label>
-                                        <input
-                                            type="number"
-                                            required
-                                            className="w-full bg-muted/50 border border-border/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm"
-                                            value={config.port}
-                                            onChange={(e) => setConfig({ ...config, port: parseInt(e.target.value) })}
-                                        />
-                                    </div>
-                                </div>
+                                )}
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
-                                            Username
-                                        </label>
-                                        <input
-                                            type="text"
-                                            required
-                                            className="w-full bg-muted/50 border border-border/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm"
-                                            placeholder="sa"
-                                            value={config.user}
-                                            onChange={(e) => setConfig({ ...config, user: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
-                                            Password
-                                        </label>
-                                        <input
-                                            type="password"
-                                            className="w-full bg-muted/50 border border-border/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm"
-                                            placeholder="••••••••"
-                                            value={config.password}
-                                            onChange={(e) => setConfig({ ...config, password: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
+                                {config.dbType !== 'kafka' && config.dbType !== 'redis' && config.dbType !== 'mongodb' && (
+                                    <div className="grid grid-cols-2 gap-4 px-1 py-1">
+                                        {/* Enable SSL/TLS */}
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                id="encrypt"
+                                                className="w-4 h-4 rounded border-border bg-muted/50 text-accent focus:ring-accent"
+                                                checked={config.options.encrypt}
+                                                onChange={(e) => setConfig({
+                                                    ...config,
+                                                    options: { ...config.options, encrypt: e.target.checked }
+                                                })}
+                                            />
+                                            <label htmlFor="encrypt" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider cursor-pointer select-none">
+                                                Enable SSL/TLS
+                                            </label>
+                                            <div className="relative group/tip">
+                                                <Info className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-accent transition-colors cursor-help" />
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 rounded-xl bg-card border border-border shadow-2xl text-[10px] text-muted-foreground leading-relaxed font-medium pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50 normal-case tracking-normal">
+                                                    <p className="font-bold text-foreground mb-1">🔒 Enable SSL/TLS</p>
+                                                    Encrypts all data sent between the app and the database server, protecting against eavesdropping (Man-in-the-middle attacks). Recommended to keep this ON.
+                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-border" />
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
-                                        Initial Database
-                                    </label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full bg-muted/50 border border-border/50 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-1 focus:ring-accent transition-all font-mono text-sm"
-                                        placeholder="master"
-                                        value={config.database}
-                                        onChange={(e) => setConfig({ ...config, database: e.target.value })}
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4 px-1 py-1">
-                                    {/* Enable SSL/TLS */}
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            id="encrypt"
-                                            className="w-4 h-4 rounded border-border bg-muted/50 text-accent focus:ring-accent"
-                                            checked={config.options.encrypt}
-                                            onChange={(e) => setConfig({
-                                                ...config,
-                                                options: { ...config.options, encrypt: e.target.checked }
-                                            })}
-                                        />
-                                        <label htmlFor="encrypt" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider cursor-pointer select-none">
-                                            Enable SSL/TLS
-                                        </label>
-                                        <div className="relative group/tip">
-                                            <Info className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-accent transition-colors cursor-help" />
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 rounded-xl bg-card border border-border shadow-2xl text-[10px] text-muted-foreground leading-relaxed font-medium pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50 normal-case tracking-normal">
-                                                <p className="font-bold text-foreground mb-1">🔒 Enable SSL/TLS</p>
-                                                Encrypts all data sent between the app and the database server, protecting against eavesdropping (Man-in-the-middle attacks). Recommended to keep this ON.
-                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-border" />
+                                        {/* Trust Server Certificate */}
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                id="trustCert"
+                                                className="w-4 h-4 rounded border-border bg-muted/50 text-accent focus:ring-accent"
+                                                checked={config.options.trustServerCertificate}
+                                                onChange={(e) => setConfig({
+                                                    ...config,
+                                                    options: { ...config.options, trustServerCertificate: e.target.checked }
+                                                })}
+                                            />
+                                            <label htmlFor="trustCert" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider cursor-pointer select-none">
+                                                Trust Certificate
+                                            </label>
+                                            <div className="relative group/tip2">
+                                                <Info className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-accent transition-colors cursor-help" />
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 p-3 rounded-xl bg-card border border-border shadow-2xl text-[10px] text-muted-foreground leading-relaxed font-medium pointer-events-none opacity-0 group-hover/tip2:opacity-100 transition-opacity duration-150 z-50 normal-case tracking-normal">
+                                                    <p className="font-bold text-foreground mb-1">⚠️ Trust Server Certificate</p>
+                                                    Accepts the server's SSL certificate even if it is not signed by a trusted CA. Use this for local or dev servers with self-signed certs. Not recommended for Production.
+                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-border" />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-
-                                    {/* Trust Server Certificate */}
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            id="trustCert"
-                                            className="w-4 h-4 rounded border-border bg-muted/50 text-accent focus:ring-accent"
-                                            checked={config.options.trustServerCertificate}
-                                            onChange={(e) => setConfig({
-                                                ...config,
-                                                options: { ...config.options, trustServerCertificate: e.target.checked }
-                                            })}
-                                        />
-                                        <label htmlFor="trustCert" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider cursor-pointer select-none">
-                                            Trust Certificate
-                                        </label>
-                                        <div className="relative group/tip2">
-                                            <Info className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-accent transition-colors cursor-help" />
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 p-3 rounded-xl bg-card border border-border shadow-2xl text-[10px] text-muted-foreground leading-relaxed font-medium pointer-events-none opacity-0 group-hover/tip2:opacity-100 transition-opacity duration-150 z-50 normal-case tracking-normal">
-                                                <p className="font-bold text-foreground mb-1">⚠️ Trust Server Certificate</p>
-                                                Accepts the server's SSL certificate even if it is not signed by a trusted CA. Use this for local or dev servers with self-signed certs. Not recommended for Production.
-                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-border" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                )}
 
                                 <div className="flex items-center gap-2 px-1">
                                     <input

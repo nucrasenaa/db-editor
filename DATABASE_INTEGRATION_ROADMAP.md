@@ -50,6 +50,10 @@
 - [ ] **ClickHouse (OLAP)**
     - [ ] รองรับการ Query ข้อมูล Log จำนวนมากด้วยความเร็วสูง
     - [ ] ระบบ Visualization ที่เหมาะสมกับ High-cardinality data
+- [x] **Apache Kafka (Event Streaming / Message Broker)**
+    - [x] รองรับการดูข้อมูลใน Topics (Consumer UI)
+    - [x] ระบบ Publish message ทดสอบไปยัง Topics
+    - [ ] การเชื่อมต่อแบบ Schema Registry รองรับ Avro/Protobuf
 
 ---
 

@@ -515,6 +515,8 @@ export default function Home() {
         query = `{\n  "collection": "${fullName.split('.').pop()}",\n  "action": "find",\n  "query": {}\n}`;
       } else if (dialect === 'redis') {
         query = fullName === 'Keys' ? 'KEYS *' : `GET ${fullName}`;
+      } else if (dialect === 'kafka') {
+        query = `{\n  "action": "consume",\n  "topic": "${fullName.split('.').pop()}",\n  "limit": 50,\n  "fromBeginning": false\n}`;
       } else if (dialect === 'mssql') {
         query = `SELECT TOP 100 * FROM [${db}].${fullName}`;
       } else if (dialect === 'postgres') {

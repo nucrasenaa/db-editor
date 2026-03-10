@@ -127,7 +127,7 @@ function setupIpcHandlers() {
                 const isMultiStatement = queryToExec.trim().split(';').filter(s => s.trim().length > 0).length > 1;
 
                 // Apply pagination logic for SINGLE SELECT queries only (skip for NoSQL)
-                if (dialect !== 'mongodb' && dialect !== 'redis' && !isExplain && !isMultiStatement && isSelect && !queryToExec.toUpperCase().includes('OFFSET') && !queryToExec.toUpperCase().includes('LIMIT') && !queryToExec.toUpperCase().includes('GROUP BY')) {
+                if (dialect !== 'mongodb' && dialect !== 'redis' && dialect !== 'kafka' && !isExplain && !isMultiStatement && isSelect && !queryToExec.toUpperCase().includes('OFFSET') && !queryToExec.toUpperCase().includes('LIMIT') && !queryToExec.toUpperCase().includes('GROUP BY')) {
                     const offset = (page - 1) * pageSize;
                     let baseQuery = queryToExec.replace(/;$/, '');
                     if (dialect === 'mssql') {
@@ -240,6 +240,19 @@ function setupIpcHandlers() {
                             databases: [{ name: config.database || '0' }],
                             schemas: [],
                             tables: [{ name: 'Keys', schema: 'public', fullName: 'Keys' }],
+                            views: [],
+                            procedures: [],
+                            synonyms: []
+                        }
+                    };
+                } else if (dialect === 'kafka') {
+                    const topicsResult = await dbProxy.query(JSON.stringify({ action: 'listTopics' }));
+                    return {
+                        success: true,
+                        metadata: {
+                            databases: [{ name: config.database || 'Kafka Cluster' }],
+                            schemas: [{ name: 'topics' }],
+                            tables: Array.isArray(topicsResult) ? topicsResult.map(t => ({ name: t.topic, schema: 'topics', fullName: t.topic })) : [],
                             views: [],
                             procedures: [],
                             synonyms: []
@@ -535,8 +548,8 @@ function setupIpcHandlers() {
             const dbProxy = await getDbProxy({ ...config, database: targetDb });
             try {
                 let script = '';
-                if (dialect === 'mongodb' || dialect === 'redis') {
-                    return { success: false, message: 'DDL is not supported for NoSQL databases.' };
+                if (dialect === 'mongodb' || dialect === 'redis' || dialect === 'kafka') {
+                    return { success: false, message: 'DDL is not supported for NoSQL / Streaming databases.' };
                 }
                 if (dialect === 'mssql') {
                     if (type === 'table') {
@@ -584,7 +597,7 @@ function setupIpcHandlers() {
             const dialect = config.dbType || 'mssql';
             const dbProxy = await getDbProxy(config);
             try {
-                if (dialect === 'mongodb' || dialect === 'redis') {
+                if (dialect === 'mongodb' || dialect === 'redis' || dialect === 'kafka') {
                     return { success: true, columns: [] };
                 }
                 let query = '';
@@ -695,7 +708,20 @@ function setupIpcHandlers() {
                 });
             }
 
-            const systemPrompt = `Expert SQL Generator for ${dbType || 'MSSQL'}. ONLY return SQL. No markdown. Schema:\n${schemaContext}`;
+            const isMongo = dbType === 'mongodb';
+            const isRedis = dbType === 'redis';
+            const isKafka = dbType === 'kafka';
+
+            let systemPrompt = '';
+            if (isMongo) {
+                systemPrompt = `Expert MongoDB Generator. Return valid JSON object only. Context:\n${schemaContext}`;
+            } else if (isRedis) {
+                systemPrompt = `Expert Redis Command Generator. Return raw command only (e.g., GET mykey).`;
+            } else if (isKafka) {
+                systemPrompt = `Expert Kafka Generator. Return valid JSON object only (e.g. {"action": "consume", "topic": "t1"}).`;
+            } else {
+                systemPrompt = `Expert SQL Generator for ${dbType || 'MSSQL'}. ONLY return SQL. No markdown. Schema:\n${schemaContext}`;
+            }
 
             let url = '', headers = { 'Content-Type': 'application/json' }, body = {};
 

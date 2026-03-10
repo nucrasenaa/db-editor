@@ -21,6 +21,7 @@
     "clsx": "^2.1.1",
     "electron-is-dev": "^3.0.1",
     "ioredis": "^5.10.0",
+    "kafkajs": "^2.2.4",
     "lucide-react": "^0.576.0",
     "mongodb": "^7.1.0",
     "mssql": "^12.2.0",
