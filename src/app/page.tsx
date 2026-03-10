@@ -1350,10 +1350,14 @@ export default function Home() {
                                     }, 1500);
 
                                     try {
+                                      const parsedConfig = JSON.parse(aiConfig);
+                                      const decryptedKey = await decryptValue(parsedConfig.apiKey);
+                                      const activeConfig = { ...parsedConfig, apiKey: decryptedKey };
+
                                       const res = await apiRequest('/api/ai/generate', 'POST', {
                                         prompt: `Fix this SQL error. Deeply analyze the error and schema to provide the correct SQL.\nERROR: ${activeTab.error}\nQUERY: ${activeTab.sqlQuery}`,
                                         schema: metadata,
-                                        config: JSON.parse(aiConfig),
+                                        config: activeConfig,
                                         dbType: config.dbType
                                       });
                                       if (res.success && res.sql) {

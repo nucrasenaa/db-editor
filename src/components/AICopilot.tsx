@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, X, Loader2, ArrowRight, CornerDownLeft, ShieldCheck, AlertCircle } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn, decryptValue } from '@/lib/utils';
 import { analyzeQuerySafety } from '@/lib/ai-utils';
 
 interface AICopilotProps {
@@ -24,7 +24,12 @@ export default function AICopilot({ onClose, onGenerated, metadata, config }: AI
     useEffect(() => {
         const saved = localStorage.getItem('ai_config');
         if (saved) {
-            setAiConfig(JSON.parse(saved));
+            const parsed = JSON.parse(saved);
+            const loadConfig = async () => {
+                const decryptedKey = await decryptValue(parsed.apiKey);
+                setAiConfig({ ...parsed, apiKey: decryptedKey });
+            };
+            loadConfig();
         }
         inputRef.current?.focus();
     }, []);

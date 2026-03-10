@@ -20,7 +20,7 @@ import {
     ChevronDown,
     ChevronUp
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, decryptValue } from '@/lib/utils';
 import { apiRequest } from '@/lib/api';
 
 interface PerformanceAdvisorProps {
@@ -58,14 +58,18 @@ export default function PerformanceAdvisor({ config, onClose }: PerformanceAdvis
     }, [config]);
 
     const handleAIExplain = async (id: string, context: any, type: 'index' | 'query') => {
-        const aiConfig = localStorage.getItem('ai_config');
-        if (!aiConfig) {
+        const savedConfig = localStorage.getItem('ai_config');
+        if (!savedConfig) {
             alert('Please configure AI in settings first.');
             return;
         }
 
         setAnalyzing(id);
         try {
+            const parsedConfig = JSON.parse(savedConfig);
+            const decryptedKey = await decryptValue(parsedConfig.apiKey);
+            const activeConfig = { ...parsedConfig, apiKey: decryptedKey };
+
             const prompt = type === 'index'
                 ? `Analyze this missing index recommendation and explain the benefit. Suggest the SQL CREATE INDEX script. DATA: ${JSON.stringify(context)}`
                 : `Analyze this expensive query and suggest optimizations. QUERY: ${context.query_text}\nSTATS: ${JSON.stringify(context)}`;
@@ -73,7 +77,7 @@ export default function PerformanceAdvisor({ config, onClose }: PerformanceAdvis
             const res = await apiRequest('/api/ai/generate', 'POST', {
                 prompt,
                 schema: null,
-                config: JSON.parse(aiConfig),
+                config: activeConfig,
                 dbType: config.dbType
             });
 

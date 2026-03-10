@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Network, Activity, Clock, Database, ChevronRight, ChevronDown, Table as TableIcon, Filter, Layers, Zap, Sparkles, Loader2, AlertCircle, X, ChevronUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, decryptValue } from '@/lib/utils';
 import { apiRequest } from '@/lib/api';
 
 interface PlanNode {
@@ -102,8 +102,8 @@ export default function ExecutionPlan({ data, dialect }: ExecutionPlanProps) {
     }, [data, dialect]);
 
     const handleAIAnalysis = async () => {
-        const aiConfig = localStorage.getItem('ai_config');
-        if (!aiConfig) {
+        const savedConfig = localStorage.getItem('ai_config');
+        if (!savedConfig) {
             setError('AI Configuration missing. Please set up a provider in AI Forge.');
             return;
         }
@@ -111,10 +111,14 @@ export default function ExecutionPlan({ data, dialect }: ExecutionPlanProps) {
         setAnalyzing(true);
         setError(null);
         try {
+            const parsedConfig = JSON.parse(savedConfig);
+            const decryptedKey = await decryptValue(parsedConfig.apiKey);
+            const activeConfig = { ...parsedConfig, apiKey: decryptedKey };
+
             const res = await apiRequest('/api/ai/generate', 'POST', {
                 prompt: `Explain this ${dialect} execution plan in plain English and suggest optimizations like missing indexes or expensive joins. PLAN DATA: ${JSON.stringify(data)}`,
                 schema: null, // We don't need full schema for plan analysis
-                config: JSON.parse(aiConfig),
+                config: activeConfig,
                 dbType: dialect
             });
 
